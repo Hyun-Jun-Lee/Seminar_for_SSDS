@@ -1,10 +1,7 @@
 # 1일차 세미나 구성안: AI, LLM, Agent 개념 지도
 
-## 1. 세미나 주제
 
-**AI는 LLM이 아니다. LLM은 Agent도 아니다.**
-
-## 2. 1일차 목표
+## 1. 1일차 목표
 
 - AI, Machine Learning, Deep Learning, Foundation Model, LLM의 포함 관계를 이해한다.
 - LLM이 잘하는 일과 못하는 일을 구분한다.
@@ -12,46 +9,27 @@
 - LangChain, LangGraph, RAG, MCP, A2A, HITL, Harness Engineering의 역할을 큰 그림으로 이해한다.
 - DaOps가 단순 LLM 호출 서비스가 아니라 운영형 AI Agent 시스템이라는 점을 이해한다.
 
-## 3. 대상자
 
-- AI Agent 개념을 실무 시스템 관점에서 이해하고 싶은 DBA/SRE/운영 담당자
-- LLM API 호출과 Agent 시스템의 차이를 알고 싶은 개발자
-- DaOps가 어떤 구조로 AI를 활용하는지 큰 그림을 이해하려는 구성원
-- LangChain, LangGraph, RAG, MCP, A2A 같은 용어를 한 번에 정리하고 싶은 구성원
-
-## 4. 사전 지식
-
-- 기본적인 IT 운영 업무 흐름에 대한 이해
-- API, 로그, 데이터 조회, 배치/비동기 작업에 대한 기초 감각
-- AI/LLM에 대한 깊은 지식은 없어도 무방
-- Python 코드 경험이 있으면 2일차 이후 이해에 도움이 됨
-
-## 5. 1일차 핵심 메시지
+## 2. 1일차 핵심 메시지
 
 - AI는 LLM보다 넓은 개념이다.
 - LLM은 강력한 언어 모델이지만, 혼자서는 운영 시스템이 될 수 없다.
 - Agent는 모델 하나가 아니라 Model, Tool, State, Routing, Verification, Observability를 포함한 시스템 설계 방식이다.
-- DaOps는 챗봇이 아니라 운영 데이터를 수집하고, 분석 흐름을 제어하고, 근거 기반 진단을 생성하는 Agent 시스템이다.
+- AI 서비스 개발에서 중요한 설계는 단순히 모델을 고르는 일이 아니라, LLM을 소프트웨어 시스템 안에 어떻게 배치할지 결정하는 일이다.
+  - 어떤 데이터를 LLM에 줄 것인가
+  - 어떤 Tool을 붙일 것인가
+  - State를 어떻게 관리할 것인가
+  - 실패/재시도/검증을 어떻게 설계할 것인가
+  - Prompt와 Schema를 어떻게 구조화할 것인가
+  - 로그와 평가를 어떻게 남길 것인가
+  - 권한과 승인 흐름을 어떻게 둘 것인가
+- 따라서 AI 서비스 개발에는 프롬프트 작성 능력뿐 아니라 소프트웨어 설계와 구현 역량이 함께 필요하다.
 - 좋은 Agent는 좋은 모델만으로 만들어지지 않고, 모델을 둘러싼 실행 환경과 검증 체계로 완성된다.
 
-## 6. 권장 시간 구성
 
-| 시간 | 목차 | 핵심 질문 |
-|---:|---|---|
-| 0~5분 | 오프닝 | 왜 지금 AI Agent를 이야기하는가? |
-| 5~15분 | AI와 LLM의 관계 | AI와 LLM은 같은 말인가? |
-| 15~25분 | LLM의 역할과 한계 | LLM은 무엇을 잘하고, 무엇을 못하는가? |
-| 25~35분 | 챗봇/RPA/Agent 차이 | Agent는 챗봇이나 RPA와 무엇이 다른가? |
-| 35~43분 | Agent 구성요소 | Agent 시스템은 어떤 부품으로 구성되는가? |
-| 43~50분 | LangChain/LangGraph/RAG | 각 기술은 Agent 시스템에서 어떤 역할을 하는가? |
-| 50~56분 | MCP/A2A/HITL/Harness Engineering | 확장성과 운영 안정성을 위해 무엇이 필요한가? |
-| 56~60분 | DaOps 위치 정리 | DaOps는 이 개념 지도에서 어디에 있는가? |
+# 3. 상세 목차 및 구성 키워드
 
----
-
-# 7. 상세 목차 및 구성 키워드
-
-## 7.1 오프닝: 왜 AI Agent를 이야기하는가
+## 3.1 오프닝: 왜 AI Agent를 이야기하는가
 
 ### 구성 의도
 
@@ -78,7 +56,7 @@
 - 필요한 세부 Agent를 호출하고 결과를 병합
 - 최종적으로 근거 기반 진단과 추천 액션을 생성
 
-## 7.2 AI와 LLM의 관계
+## 3.2 AI와 LLM의 관계
 
 ### 구성 의도
 
@@ -105,7 +83,7 @@
 - LLM은 최근 AI 활용을 폭발시킨 핵심 기술이지만, AI 전체와 동일하지 않다.
 - 운영 시스템에서 중요한 것은 LLM 자체보다 LLM을 어떤 데이터, 도구, 프로세스와 연결하느냐다.
 
-## 7.3 LLM의 역할과 한계
+## 3.3 LLM의 역할과 한계
 
 ### 구성 의도
 
@@ -153,7 +131,7 @@
 - LLM은 운영자의 판단을 돕는 강력한 언어/추론 엔진이다.
 - 하지만 운영 서비스가 되려면 Tool, State, 권한, 로그, 검증, 평가가 함께 필요하다.
 
-## 7.4 챗봇, RPA, AI Agent 차이
+## 3.4 챗봇, RPA, AI Agent 차이
 
 ### 구성 의도
 
@@ -207,7 +185,7 @@
 - RPA는 정해진 절차를 실행한다.
 - Agent는 목표를 기준으로 도구를 사용하고 상태를 관리하며 실행 흐름을 결정한다.
 
-## 7.5 Agent의 구성요소
+## 3.5 Agent의 구성요소
 
 ### 구성 의도
 
@@ -306,7 +284,53 @@
 - Agent는 Model + Tool + State + Routing + Verification + Observability + Evaluation의 조합이다.
 - 모델 성능만 좋아서는 운영 품질이 보장되지 않는다.
 
-## 7.6 LangChain의 역할
+## 3.6 Agent Tooling과 Skill 생태계
+
+### 구성 의도
+
+- 청중이 이미 사용하는 Claude Code, GPT Codex 같은 도구를 Agent 개념 지도 안에 배치한다.
+- Coding Agent를 단순 코드 생성기가 아니라 작업 절차, 품질 기준, 도구 호출을 수행하는 실행 환경으로 설명한다.
+- 4일차의 Harness Engineering, Skill, Workflow 자동화 사례로 자연스럽게 이어지게 한다.
+
+### 주요 키워드
+
+- Claude Code
+- GPT Codex
+- Cursor
+- Gemini CLI
+- OpenCode
+- Coding Agent
+- AGENTS.md
+- CLAUDE.md
+- SKILL.md
+- Slash command
+- Plugin
+- MCP
+- Subagent / persona
+- Context engineering
+- Workflow encoding
+- Quality gate
+
+### Skill이 필요한 이유
+
+- 반복되는 작업 절차를 Agent에게 일관되게 제공
+- 코드 리뷰, 테스트, 배포, 문서화 같은 품질 기준을 명시
+- 프로젝트별 컨벤션과 금지 사항을 작업 중 계속 참조
+- 시니어 엔지니어의 작업 방식을 재사용 가능한 지침으로 구조화
+- Agent가 "그럴듯한 답"이 아니라 정해진 절차를 따라 결과물을 만들게 함
+
+### 소개할 생태계 예시
+
+- Compound Engineering: brainstorm, plan, work, review, commit/push/PR 같은 개발 workflow를 skill/plugin으로 구조화한 사례
+- addyosmani/agent-skills: AI coding agent를 위한 production-grade engineering skills 모음
+- nexu-io/open-design: coding agent를 design engine처럼 사용해 prototype, landing page, dashboard, slide 등 디자인 산출물을 만드는 사례
+
+### 강조 메시지
+
+- Claude Code나 Codex를 잘 쓰는 핵심은 모델에게 잘 말하는 것만이 아니라, 좋은 작업 절차와 품질 기준을 Skill로 제공하는 것이다.
+- Skill은 Agent에게 "어떻게 일해야 하는지"를 알려주는 운영 매뉴얼에 가깝다.
+
+## 3.7 LangChain의 역할
 
 ### 구성 의도
 
@@ -340,7 +364,7 @@
 - LangChain은 LLM 앱 개발을 편하게 해준다.
 - 하지만 LangChain 자체가 Agent 품질, 운영 안정성, 평가 체계를 보장하지는 않는다.
 
-## 7.7 LangGraph의 역할
+## 3.8 LangGraph의 역할
 
 ### 구성 의도
 
@@ -382,7 +406,7 @@
 - 운영 분석은 조건부 분기, 병렬 실행, 상태 병합, 실패 처리가 필요하다.
 - DaOps에서 LangGraph는 Agent 실행 흐름을 관리하는 Orchestrator 역할을 한다.
 
-## 7.8 RAG의 역할
+## 3.9 RAG의 역할
 
 ### 구성 의도
 
@@ -432,7 +456,7 @@
 - RAG는 문서 지식을 연결하는 좋은 방법이다.
 - 하지만 운영 Metric 분석에서는 구조화 데이터 조회와 도메인 로직이 더 중요할 수 있다.
 
-## 7.9 MCP 개념
+## 3.10 MCP 개념
 
 ### 구성 의도
 
@@ -475,7 +499,7 @@
 - 현재 DaOps에서는 Python 함수/Collector가 Tool 역할을 한다.
 - 향후 MCP를 적용하면 Tool을 더 표준화하고 재사용 가능한 형태로 분리할 수 있다.
 
-## 7.10 A2A 개념
+## 3.11 A2A 개념
 
 ### 구성 의도
 
@@ -518,7 +542,7 @@
 - 현재 DaOps는 하나의 LangGraph 안에서 Sub Agent를 호출하는 구조에 가깝다.
 - A2A는 Agent를 독립 서비스로 분리하고 협업시키려는 미래 확장 방향으로 볼 수 있다.
 
-## 7.11 HITL 개념
+## 3.12 HITL 개념
 
 ### 구성 의도
 
@@ -553,7 +577,7 @@
 - 운영 업무에서 모든 것을 자동화하는 것이 목표는 아니다.
 - 위험한 조치는 사람이 승인하고, Agent는 근거와 추천안을 제공하는 구조가 현실적이다.
 
-## 7.12 Harness Engineering 개념
+## 3.13 Harness Engineering 개념
 
 ### 구성 의도
 
@@ -592,7 +616,7 @@
 - 좋은 Agent는 좋은 모델만으로 만들어지지 않는다.
 - 모델을 둘러싼 구조가 품질과 안정성을 결정한다.
 
-## 7.13 DaOps를 개념 지도에 배치
+## 3.14 DaOps를 개념 지도에 배치
 
 ### 구성 의도
 
@@ -686,13 +710,14 @@
 6. LLM이 잘하는 것과 못하는 것
 7. 챗봇/RPA/AI Agent 비교
 8. Agent 구성요소: Model, Tool, State, Routing, Verification, Observability
-9. LangChain의 역할
-10. LangGraph의 역할
-11. RAG가 필요한 경우와 아닌 경우
-12. MCP/A2A/HITL 개념 지도
-13. Harness Engineering으로 보는 Agent 시스템
-14. DaOps를 개념 지도 위에 배치
-15. 1일차 요약 및 2일차 예고
+9. Agent Tooling과 Skill 생태계
+10. LangChain의 역할
+11. LangGraph의 역할
+12. RAG가 필요한 경우와 아닌 경우
+13. MCP/A2A/HITL 개념 지도
+14. Harness Engineering으로 보는 Agent 시스템
+15. DaOps를 개념 지도 위에 배치
+16. 1일차 요약 및 2일차 예고
 
 # 9. 1일차에서 사용할 반복 예시
 
@@ -731,6 +756,7 @@
 - LLM은 자연어 이해와 생성에 강하지만, 운영 시스템을 직접 관측하거나 관리하지는 못한다.
 - Agent는 LLM에 Tool, State, Routing, Verification, Observability를 결합한 시스템 설계 방식이다.
 - LangChain은 LLM 앱 개발 편의 도구이고, LangGraph는 상태 기반 Agent workflow를 구성하는 데 유용하다.
+- Claude Code/Codex 같은 coding agent는 Skill과 프로젝트 지침을 통해 일관된 작업 절차를 따를 수 있다.
 - RAG는 문서 지식 연결에 적합하지만, 실시간 Metric 분석에는 구조화 데이터 조회가 더 중요할 수 있다.
 - MCP, A2A, HITL은 DaOps의 향후 확장 방향으로 이해하면 된다.
 - DaOps는 단순 챗봇이 아니라 운영 업무를 Multi-Agent Workflow로 설계한 사례다.
