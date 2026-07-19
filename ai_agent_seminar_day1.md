@@ -24,6 +24,17 @@
   - 로그와 평가를 어떻게 남길 것인가
   - 권한과 승인 흐름을 어떻게 둘 것인가
 - 따라서 AI 서비스 개발에는 프롬프트 작성 능력뿐 아니라 소프트웨어 설계와 구현 역량이 함께 필요하다.
+- AI 서비스는 처음부터 완벽한 답변을 내는 제품이라기보다, 실제 사용 데이터와 실패 사례를 축적하면서 점점 개선되도록 설계해야 하는 시스템이다.
+  - 사용자 질문
+  - 입력 파라미터
+  - Agent 실행 경로
+  - Tool 호출 결과
+  - 중간 분석 결과
+  - 최종 답변
+  - Quality Gate 결과
+  - 사용자 피드백
+  - 사후 확인된 실제 원인
+- 이렇게 축적한 데이터는 Prompt 개선, Routing 개선, 평가 데이터셋 구축, 회귀 테스트, Runbook/RAG 자료화에 다시 사용된다.
 - 좋은 Agent는 좋은 모델만으로 만들어지지 않고, 모델을 둘러싼 실행 환경과 검증 체계로 완성된다.
 
 
@@ -35,26 +46,6 @@
 
 - 세미나가 단순 AI 유행어 소개가 아니라 실제 운영 업무 개선을 위한 이야기임을 명확히 한다.
 - DaOps 사례를 통해 추상적인 AI Agent 개념을 실무 맥락에 붙인다.
-- 4일 전체 세미나의 방향을 간단히 예고한다.
-
-### 주요 키워드
-
-- 운영 업무 반복성
-- DBA/SRE 초기 점검 절차
-- 장애/성능 저하 분석
-- Metric, Wait Event, SQL, OS 정보 연결
-- 단순 답변 생성과 업무 흐름 보조의 차이
-- AI를 "답변 생성기"가 아니라 "운영 분석 보조 시스템"으로 보는 관점
-- DaOps 사례 중심 세미나
-- 기존 사내 AI 교육과 차별점
-
-### 설명 흐름 후보
-
-- "DB가 느립니다"라는 질문으로 시작
-- 일반 챗봇은 가능한 원인 목록을 답변
-- 운영형 Agent는 실제 Metric/Wait Event/SQL/Host 상태를 확인
-- 필요한 세부 Agent를 호출하고 결과를 병합
-- 최종적으로 근거 기반 진단과 추천 액션을 생성
 
 ## 3.2 AI와 LLM의 관계
 
@@ -105,26 +96,14 @@
 
 ### LLM이 못하거나 약한 것
 
-- 최신 시스템 상태 직접 조회
-- DB 직접 조회
-- OS Metric 직접 관측
-- 장기 작업 상태 관리
-- 권한 통제
-- 실행 이력 추적
-- 결과 검증
-- 정량 계산의 일관성 보장
-- 운영 장애 원인 확정
-- 위험 작업 승인
-- 외부 도구 사용 없이 실제 조치 수행
-
-### 운영 업무 관점의 한계
-
-- 데이터가 없으면 추측할 수밖에 없음
-- 근거가 없으면 그럴듯한 오답이 될 수 있음
-- Tool이 없으면 실제 시스템을 볼 수 없음
-- State가 없으면 장기 흐름을 관리할 수 없음
-- Observability가 없으면 장애 추적이 어려움
-- Evaluation이 없으면 개선 여부를 판단하기 어려움
+- 학습 데이터에 없는 최신 사실을 스스로 알 수 없음
+- 입력에 없는 시스템 상태나 업무 맥락을 추측으로 채울 수 있음
+- 그럴듯하지만 틀린 답변을 생성할 수 있음
+- 긴 문맥에서 앞뒤 조건이나 세부 제약을 누락할 수 있음
+- 복잡한 수치 계산이나 단위 변환에서 일관성이 흔들릴 수 있음
+- 원인 후보와 확정 사실을 구분하지 못하고 단정적으로 표현할 수 있음
+- 모호한 질문에 대해 필요한 추가 질문 없이 임의로 전제를 세울 수 있음
+- 도메인별 판단 기준이나 운영 정책을 명시하지 않으면 일반적으로 학습된 사전 지식으로만 응답함
 
 ### 강조 메시지
 
@@ -171,13 +150,6 @@
 - 실패 처리
 - 반복 개선
 - Multi-Agent 협업
-
-### DaOps 예시
-
-- 사용자 질문: "DB가 느립니다"
-- 일반 챗봇: CPU, Lock, I/O, SQL 문제일 수 있다고 일반론 답변
-- RPA: 정해진 SQL 몇 개를 순서대로 실행
-- DaOps Agent: 질문 분류 → Global Health 분석 → 필요한 Sub Agent 선택 → Metric/Wait Event/SQL 근거 수집 → 진단 요약 → 품질 검증
 
 ### 강조 메시지
 
@@ -351,14 +323,6 @@
 - provider 교체 편의성
 - prompt/model/tool 연결
 
-### DaOps 연결 키워드
-
-- 사내 LLM API 호출 래핑
-- Prompt 구성
-- structured output 사용
-- Classifier 결과를 Schema로 받기
-- Agent 결과를 정해진 형식으로 받기
-
 ### 강조 메시지
 
 - LangChain은 LLM 앱 개발을 편하게 해준다.
@@ -389,22 +353,11 @@
 - Long-running Agent
 - Multi-Agent Orchestration
 
-### DaOps에서 필요한 이유
-
-- Classifier 이후 동적 분기
-- Global Health 이후 Sub Agent 선택
-- Temp/Undo/Lock/OS/Memory/PGA Agent 병렬 호출
-- 여러 Agent 결과 병합
-- Diagnosis Summary 단계 제어
-- Quality Gate 단계 제어
-- 중복 실행 방지
-- visited_nodes/target_nodes 기반 흐름 추적
-
 ### 강조 메시지
 
 - 단순 Chain은 순차 처리에 가깝다.
 - 운영 분석은 조건부 분기, 병렬 실행, 상태 병합, 실패 처리가 필요하다.
-- DaOps에서 LangGraph는 Agent 실행 흐름을 관리하는 Orchestrator 역할을 한다.
+
 
 ## 3.9 RAG의 역할
 
@@ -446,7 +399,6 @@
 
 ### DaOps 관점
 
-- Metric 분석은 SQL/Collector 기반이 적합
 - Runbook/장애사례/운영 매뉴얼은 RAG 후보
 - RAG는 Agent의 Tool 중 하나일 수 있음
 - 모든 문제를 RAG로 풀려고 하면 구조가 흐려짐
@@ -700,55 +652,7 @@
 
 ---
 
-# 8. 발표자료 후보 슬라이드
 
-1. 1일차 제목: AI는 LLM이 아니다. LLM은 Agent도 아니다.
-2. 세미나 전체 로드맵
-3. 왜 AI Agent를 이야기하는가
-4. "DB가 느립니다" 질문으로 보는 챗봇과 Agent 차이
-5. AI, ML, Deep Learning, Foundation Model, LLM 관계
-6. LLM이 잘하는 것과 못하는 것
-7. 챗봇/RPA/AI Agent 비교
-8. Agent 구성요소: Model, Tool, State, Routing, Verification, Observability
-9. Agent Tooling과 Skill 생태계
-10. LangChain의 역할
-11. LangGraph의 역할
-12. RAG가 필요한 경우와 아닌 경우
-13. MCP/A2A/HITL 개념 지도
-14. Harness Engineering으로 보는 Agent 시스템
-15. DaOps를 개념 지도 위에 배치
-16. 1일차 요약 및 2일차 예고
-
-# 9. 1일차에서 사용할 반복 예시
-
-## 예시 질문
-
-> DB가 느립니다. 원인을 분석해 주세요.
-
-## 챗봇식 응답 관점
-
-- 일반적인 원인 후보 나열
-- CPU, I/O, Lock, SQL 성능 문제 가능성 설명
-- 실제 시스템 상태는 확인하지 못함
-- 근거 수치가 부족함
-
-## Agent식 처리 관점
-
-- 사용자 질문 분류
-- 분석 대상 DB/시간 범위 확인
-- Global Health 분석
-- CPU/Memory/Lock/Temp/Undo 등 필요한 Sub Agent 선택
-- Metric, Wait Event, SQL, OS 정보 수집
-- 여러 Agent 결과 병합
-- 근거 중심 진단 요약
-- Quality Gate로 최종 답변 검증
-
-## 1일차 활용 방식
-
-- 오프닝에서 문제 제시
-- 챗봇/RPA/Agent 비교에서 재사용
-- Agent 구성요소 설명에서 Model/Tool/State/Routing으로 분해
-- DaOps 위치 정리에서 전체 구조로 다시 조립
 
 # 10. 1일차 마무리 요약
 
