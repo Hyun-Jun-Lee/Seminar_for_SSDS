@@ -13,7 +13,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+    @font-face {
+      font-family: 'Pretendard';
+      src: url('./assets/fonts/PretendardVariable.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
 
     :root {
       --bg: #ffffff;
@@ -218,6 +224,7 @@
       gap: 26px;
       margin-top: 36px;
     }
+    .pt-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .pt {
       border-top: 1px solid color-mix(in oklch, var(--bg) 18%, transparent);
       padding-top: 16px;
@@ -233,10 +240,16 @@
       gap: 22px;
       margin-top: 34px;
     }
+    .pipeline.five {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
+    }
     .step .nb { font-family: var(--font-mono); font-size: 13px; color: color-mix(in oklch, var(--bg) 58%, transparent); letter-spacing: 0.06em; }
     .step:first-child .nb { color: var(--accent); }
     .step h3 { font-family: var(--font-display); font-size: 22px; font-weight: 650; margin: 6px 0 6px; line-height: 1.2; }
     .step p  { color: color-mix(in oklch, var(--bg) 70%, transparent); margin: 0; font-size: 15px; line-height: 1.48; }
+    .pipeline.five .step h3 { font-size: 20px; }
+    .pipeline.five .step p { font-size: 14px; }
     .slide.dark .step p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
 
     .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px; }
@@ -462,7 +475,9 @@
       .two-col,
       .ba-grid,
       .pt-grid,
+      .pt-grid.two,
       .pipeline,
+      .pipeline.five,
       .split-list,
       .split-list.three {
         grid-template-columns: 1fr;
@@ -528,7 +543,7 @@
     <p class="eyebrow">Model fit</p>
     <h2 class="h-xl">LLM이 잘하는 것</h2>
     <p class="lead">LLM은 언어와 패턴을 다루는 데 강합니다. 핵심은 자유로운 입력을 <strong>의미 있는 구조와 작업 단위</strong>로 바꾸는 능력입니다.</p>
-    <div class="split-list three">
+    <div class="split-list">
       <div class="item"><strong>의도 파악</strong><span>자연어 질문에서 사용자의 목적을 해석</span></div>
       <div class="item"><strong>구조화</strong><span>비정형 입력을 필드, 분류, JSON 형태로 변환</span></div>
       <div class="item"><strong>요약</strong><span>긴 문맥에서 핵심을 압축</span></div>
@@ -576,25 +591,32 @@
   <section class="slide light" data-screen-label="06 계산과 모호함" data-od-id="slide-06-calculation-ambiguity">
     <p class="eyebrow">Guardrails</p>
     <h2 class="h-xl">계산 오류와 모호한 질문 보완</h2>
-    <div class="ba-grid">
-      <div class="ba-col">
-        <p class="ba-label">4. 수치 계산 / 단위 오류</p>
-        <h3>계산과 해석을 분리합니다.</h3>
+    <div class="pt-grid two">
+      <div class="pt is-key">
+        <h3>4. 수치 계산 / 단위 오류</h3>
         <p>계산은 LLM 전달 전 단계에서 수행하고, rule-based check를 추가하며, 수치 결과와 자연어 해석을 역할로 분리합니다.</p>
       </div>
-      <div class="ba-col">
-        <p class="ba-label">5. 모호한 질문</p>
-        <h3>부족한 조건을 명시적으로 다룹니다.</h3>
+      <div class="pt">
+        <h3>5. 모호한 질문</h3>
         <p>필수 파라미터를 정의하고, 정보 부족 시 추가 질문을 생성하며, 기본값을 사용한 경우 답변에 명시합니다.</p>
       </div>
     </div>
   </section>
 
   <!-- --- -->
-  <section class="slide hero dark center" data-screen-label="07 도메인 기준" data-od-id="slide-07-domain-consistency">
-    <div class="eyebrow">운영 품질의 기준</div>
-    <h2 class="h-hero">도메인 기준과 답변 일관성 보완</h2>
-    <p class="lead">사내 기준, Runbook/RAG, structured output, Schema, Prompt/model version, 평가셋 기반 회귀 테스트가 답변 품질을 반복 가능하게 만듭니다.</p>
+  <section class="slide dark" data-screen-label="07 도메인 기준" data-od-id="slide-07-domain-consistency">
+    <p class="eyebrow">Operating standard</p>
+    <h2 class="h-xl">도메인 기준과 답변 일관성 보완</h2>
+    <div class="pt-grid two">
+      <div class="pt is-key">
+        <h3>6. 도메인 기준 부족</h3>
+        <p>사내 운영 기준과 threshold를 정리하고, Runbook/RAG를 연결하며, 도메인별 Agent Prompt에 판단 기준을 포함합니다.</p>
+      </div>
+      <div class="pt">
+        <h3>7. 답변 일관성</h3>
+        <p>structured output과 Schema를 사용하고, Prompt/model version을 기록하며, 평가셋 기반 회귀 테스트를 수행합니다.</p>
+      </div>
+    </div>
   </section>
 
   <!-- --- -->
@@ -651,13 +673,14 @@
   <section class="slide dark" data-screen-label="12 데이터 사용처" data-od-id="slide-12-data-uses">
     <p class="eyebrow">Improvement loop</p>
     <h2 class="h-xl">축적한 데이터는 어디에 쓰는가</h2>
-    <div class="split-list">
+    <div class="split-list three">
       <div class="item"><strong>Prompt 개선</strong><span>더 안정적인 지시 구조로 조정</span></div>
       <div class="item"><strong>Routing 개선</strong><span>질문 유형별 경로 최적화</span></div>
       <div class="item"><strong>평가 데이터셋 구축</strong><span>반복 검증 가능한 케이스화</span></div>
       <div class="item"><strong>회귀 테스트</strong><span>품질 저하를 배포 전에 감지</span></div>
       <div class="item"><strong>Runbook/RAG 자료화</strong><span>근거 문서와 운영 지식으로 재사용</span></div>
       <div class="item"><strong>장애 패턴 정리</strong><span>자주 나오는 실패를 구조화</span></div>
+      <div class="item"><strong>Agent 품질 대시보드</strong><span>품질과 실패 양상을 운영 지표로 관찰</span></div>
     </div>
     <p class="callout">AI 서비스는 데이터를 축적할수록 <strong>도메인에 맞게 똑똑해질 수 있습니다.</strong></p>
   </section>
@@ -667,12 +690,14 @@
     <p class="eyebrow">Skill mindset</p>
     <h2 class="h-xl">반복 가능한 작업 방식도 설계해야 한다</h2>
     <p class="lead">Tool, State, Logging만으로 Agent 품질이 자동으로 안정화되지는 않습니다. 운영에서는 Agent가 매번 같은 기준과 절차로 일하도록 작업 방식을 명시해야 합니다.</p>
-    <div class="split-list">
+    <div class="split-list three">
       <div class="item"><strong>분석 순서</strong><span>어떤 순서로 문제를 분석할 것인가</span></div>
       <div class="item"><strong>리뷰 기준</strong><span>어떤 기준으로 코드를 리뷰할 것인가</span></div>
       <div class="item"><strong>완료 기준</strong><span>어떤 테스트를 통과해야 완료로 볼 것인가</span></div>
       <div class="item"><strong>승인 조건</strong><span>어떤 상황에서 사용자 승인이나 추가 질문이 필요한가</span></div>
+      <div class="item"><strong>프로젝트 컨벤션</strong><span>금지 사항과 팀별 기준은 무엇인가</span></div>
     </div>
+    <p class="callout">이처럼 Agent의 실행 절차와 판단 기준을 재사용 가능한 형태로 정리한 것이 <strong>Skill</strong>입니다.</p>
   </section>
 
   <!-- --- -->
@@ -711,10 +736,23 @@
   </section>
 
   <!-- --- -->
-  <section class="slide hero dark center" data-screen-label="16 LangChain" data-od-id="slide-16-langchain">
-    <div class="eyebrow">Framework</div>
-    <h2 class="h-hero">LangChain</h2>
-    <p class="lead">LangChain은 단순 모델 호출 wrapper라기보다 <strong>모델, Tool, Agent loop를 빠르게 구성하기 위한 상위 프레임워크</strong>에 가깝습니다.</p>
+  <section class="slide dark" data-screen-label="16 LangChain" data-od-id="slide-16-langchain">
+    <p class="eyebrow">Framework</p>
+    <h2 class="h-xl">LangChain</h2>
+    <p class="lead">LangChain은 Agent와 LLM 애플리케이션을 빠르게 만들기 위한 프레임워크입니다.</p>
+    <div class="ba-grid">
+      <div class="ba-col">
+        <p class="ba-label">1. Model / Tool 통합</p>
+        <h3>Provider 차이를 표준 인터페이스로 다룹니다.</h3>
+        <p>모델 API, 파라미터, message format이 달라도 모델과 Tool을 일관된 방식으로 연결하게 합니다.</p>
+      </div>
+      <div class="ba-col">
+        <p class="ba-label">2. Agent 기본 구조 제공</p>
+        <h3>Tool 선택과 반복 실행 루프를 빠르게 구성합니다.</h3>
+        <p>Agent는 모델과 Tool을 결합해 어떤 Tool을 사용할지 판단하고 반복적으로 작업을 수행합니다.</p>
+      </div>
+    </div>
+    <p class="callout">즉, 단순 모델 호출 wrapper라기보다 <strong>모델, Tool, Agent loop를 구성하기 위한 상위 프레임워크</strong>에 가깝습니다.</p>
     <aside class="speaker-notes">출처: LangChain 공식 문서 Overview, Agents.</aside>
   </section>
 
@@ -840,11 +878,12 @@ Client
     <div class="eyebrow">Closing frame</div>
     <h2 class="h-hero">Harness Engineering</h2>
     <p class="lead">Harness Engineering은 모델 주변 실행 환경을 설계하는 관점입니다.<br>품질은 모델 밖의 데이터 연결, Tool 설계, Prompt/Schema, Logging, Evaluation, 권한 관리, 검증 루프에서 결정됩니다.</p>
-    <div class="pipeline">
+    <div class="pipeline five">
       <div class="step"><span class="nb">01</span><h3>모델 상향 평준화</h3><p>좋은 모델만으로는 차별화가 어렵습니다.</p></div>
       <div class="step"><span class="nb">02</span><h3>병목은 모델 밖</h3><p>데이터, Tool, 평가, 권한이 안정성을 결정합니다.</p></div>
       <div class="step"><span class="nb">03</span><h3>Agentic application</h3><p>State, Workflow, Verification, Observability가 필수입니다.</p></div>
-      <div class="step"><span class="nb">04</span><h3>개선 루프</h3><p>실패 사례를 축적하고 다시 개선하는 구조가 필요합니다.</p></div>
+      <div class="step"><span class="nb">04</span><h3>Production 신뢰성</h3><p>실패 처리, 재시도, 추적, 보안, 승인 흐름이 필요합니다.</p></div>
+      <div class="step"><span class="nb">05</span><h3>개선 루프</h3><p>실패 사례를 축적하고 다시 개선하는 구조가 필요합니다.</p></div>
     </div>
   </section>
 
