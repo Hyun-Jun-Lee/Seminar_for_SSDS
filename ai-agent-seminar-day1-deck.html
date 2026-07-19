@@ -1,0 +1,982 @@
+<!doctype html>
+<!--
+  OD simple-deck seed.
+
+  Single-file horizontal-swipe HTML deck. Each `<section class="slide">`
+  is one slide; the body uses CSS scroll-snap to lock to slide boundaries.
+  Keyboard nav (← / → / Space / Home / End) is wired in via the script at
+  the bottom — DO NOT replace it, it solves five iframe-specific problems
+  that the naive version silently breaks (see comments in the script).
+-->
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
+
+    :root {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface-warm: #f5f5f5;
+      --fg: #1e2026;
+      --fg-2: #32313a;
+      --muted: #848e9c;
+      --meta: #777e90;
+      --border: #e6e8ea;
+      --border-soft: #f0f1f2;
+      --accent: #f0b90b;
+      --accent-on: #1e2026;
+      --accent-hover: #1eaedb;
+      --accent-active: #d0980b;
+      --success: #0ecb81;
+      --warn: #eab308;
+      --danger: #f6465d;
+      --font-display: BinancePlex, 'Pretendard', Arial, sans-serif;
+      --font-body: BinancePlex, 'Pretendard', Arial, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+      --text-xs: 11px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 20px;
+      --text-xl: 24px;
+      --text-2xl: 28px;
+      --text-3xl: 34px;
+      --text-4xl: 60px;
+      --leading-body: 1.5;
+      --leading-tight: 1.0;
+      --tracking-display: 0;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --section-y-desktop: 80px;
+      --section-y-tablet: 48px;
+      --section-y-phone: 32px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-raised: 0 3px 5px 0 rgba(32, 32, 37, 0.05);
+      --focus-ring: 0 0 0 2px #1eaedb;
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+      --container-max: 1200px;
+      --container-gutter-desktop: 32px;
+      --container-gutter-tablet: 16px;
+      --container-gutter-phone: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--fg);
+      color: var(--bg);
+      font-family: var(--font-body);
+      font-size: 18px;
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      line-break: strict;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+    body::-webkit-scrollbar { display: none; }
+    p { text-wrap: pretty; }
+    h1, h2, h3 {
+      text-wrap: balance;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+
+    .slide {
+      flex: 0 0 100vw;
+      width: 100vw;
+      height: 100vh;
+      scroll-snap-align: start;
+      padding: clamp(44px, 6vw, 88px) clamp(48px, 7vw, 104px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide.light,
+    .slide.dark {
+      background: var(--fg);
+      color: var(--bg);
+    }
+    .slide.light .muted,
+    .slide.dark .muted {
+      color: color-mix(in oklch, var(--bg) 68%, transparent);
+    }
+    .slide.light .border,
+    .slide.dark .border {
+      border-color: color-mix(in oklch, var(--bg) 18%, transparent);
+    }
+    .slide.hero { padding-block: clamp(64px, 9vw, 128px); }
+    .slide.center { align-items: center; text-align: center; justify-content: center; }
+    .slide.center .body { margin-inline: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 22px;
+    }
+    .h-hero {
+      font-family: var(--font-display);
+      font-size: clamp(44px, 4.5vw, var(--text-4xl));
+      line-height: 1.08;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      margin: 0 0 20px;
+      max-width: min(92vw, 980px);
+    }
+    .h-xl {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 3.1vw, var(--text-3xl));
+      line-height: 1.08;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      margin: 0 0 20px;
+      max-width: min(90vw, 920px);
+    }
+    .h-md {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.5vw, var(--text-2xl));
+      line-height: 1.12;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    .lead {
+      font-size: clamp(20px, 1.6vw, 24px);
+      line-height: 1.55;
+      color: color-mix(in oklch, var(--bg) 72%, transparent);
+      max-width: 56ch;
+      margin: 0;
+    }
+    .slide.dark .lead { color: color-mix(in oklch, var(--bg) 72%, transparent); }
+    .meta { font-family: var(--font-mono); font-size: 13px; color: color-mix(in oklch, var(--bg) 64%, transparent); }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: clamp(120px, 18vw, 232px);
+      line-height: 0.9;
+      letter-spacing: 0;
+      color: var(--accent);
+      font-weight: 700;
+      margin: 0 0 16px;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-num .unit { font-size: 0.36em; opacity: 0.85; margin-left: 4px; }
+    .stat-caption {
+      font-size: clamp(20px, 1.7vw, 26px);
+      color: color-mix(in oklch, var(--bg) 72%, transparent);
+      max-width: 32ch;
+      margin: 0;
+    }
+    .slide.dark .stat-caption { color: color-mix(in oklch, var(--bg) 72%, transparent); }
+
+    .quote-mark {
+      font-family: var(--font-display);
+      font-size: clamp(120px, 14vw, 184px);
+      line-height: 0.6;
+      color: var(--accent);
+      opacity: 0.18;
+      margin: 0 0 -24px;
+    }
+    .quote-text {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, var(--text-3xl));
+      line-height: 1.25;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      max-width: min(88vw, 980px);
+      margin: 0 0 28px;
+    }
+    .quote-author { font-size: 14px; color: color-mix(in oklch, var(--bg) 64%, transparent); }
+
+    .pt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 26px;
+      margin-top: 36px;
+    }
+    .pt {
+      border-top: 1px solid color-mix(in oklch, var(--bg) 18%, transparent);
+      padding-top: 16px;
+    }
+    .pt.is-key { border-top: 2px solid var(--accent); }
+    .pt h3 { font-size: 20px; font-weight: 650; margin: 0 0 8px; letter-spacing: var(--tracking-display); }
+    .pt p  { color: color-mix(in oklch, var(--bg) 70%, transparent); margin: 0; font-size: 17px; line-height: 1.5; }
+    .slide.dark .pt p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      margin-top: 34px;
+    }
+    .step .nb { font-family: var(--font-mono); font-size: 13px; color: color-mix(in oklch, var(--bg) 58%, transparent); letter-spacing: 0.06em; }
+    .step:first-child .nb { color: var(--accent); }
+    .step h3 { font-family: var(--font-display); font-size: 22px; font-weight: 650; margin: 6px 0 6px; line-height: 1.2; }
+    .step p  { color: color-mix(in oklch, var(--bg) 70%, transparent); margin: 0; font-size: 15px; line-height: 1.48; }
+    .slide.dark .step p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
+
+    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px; }
+    .ba-col .ba-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in oklch, var(--bg) 62%, transparent); margin: 0 0 12px; }
+    .ba-col h3 { font-family: var(--font-display); font-size: 30px; line-height: 1.16; margin: 0 0 16px; max-width: 18ch; }
+    .ba-col p  { color: color-mix(in oklch, var(--bg) 70%, transparent); font-size: 17px; line-height: 1.5; margin: 0; }
+    .slide.dark .ba-col p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
+
+    .deck-counter {
+      position: fixed;
+      bottom: 24px; right: 32px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--bg);
+      background: color-mix(in oklch, var(--fg) 90%, var(--bg));
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      letter-spacing: 0.04em;
+      z-index: 10;
+    }
+    .deck-hint {
+      position: fixed;
+      bottom: 24px; left: 32px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: color-mix(in oklch, var(--bg) 62%, transparent);
+      letter-spacing: 0.04em;
+      z-index: 10;
+    }
+    .deck-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--accent);
+      width: 0;
+      z-index: 10;
+      transition: width 0.18s ease;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 42px;
+      align-items: start;
+      margin-top: 26px;
+    }
+    .split-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 20px;
+      margin-top: 30px;
+    }
+    .split-list.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .item {
+      border: 1px solid color-mix(in oklch, var(--bg) 14%, transparent);
+      background: color-mix(in oklch, var(--fg) 92%, var(--bg));
+      color: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: var(--elev-raised);
+    }
+    .slide.dark .item {
+      background: color-mix(in oklch, var(--fg) 92%, var(--bg));
+      border-color: color-mix(in oklch, var(--bg) 14%, transparent);
+    }
+    .item strong {
+      display: block;
+      font-size: 19px;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+    .item span, .item p {
+      color: color-mix(in oklch, var(--bg) 68%, transparent);
+      font-size: 16px;
+      line-height: 1.45;
+      margin: 0;
+    }
+    .slide.dark .item span, .slide.dark .item p { color: color-mix(in oklch, var(--bg) 68%, transparent); }
+    .compact-list {
+      margin: 24px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .compact-list li {
+      padding-left: 18px;
+      position: relative;
+      font-size: 18px;
+      line-height: 1.42;
+    }
+    .compact-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.75em;
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 999px;
+    }
+    .muted-text { color: color-mix(in oklch, var(--bg) 68%, transparent); }
+    .slide.dark .muted-text { color: color-mix(in oklch, var(--bg) 68%, transparent); }
+    .callout {
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      background: color-mix(in oklch, var(--fg) 91%, var(--bg));
+      color: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      margin-top: 28px;
+      font-size: 20px;
+      line-height: 1.46;
+    }
+    .slide.dark .callout {
+      background: color-mix(in oklch, var(--fg) 91%, var(--bg));
+      border-color: color-mix(in oklch, var(--bg) 16%, transparent);
+    }
+    .code-block {
+      font-family: var(--font-mono);
+      font-size: clamp(14px, 1.35vw, 18px);
+      line-height: 1.55;
+      background: color-mix(in oklch, var(--fg) 88%, var(--bg));
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 22px 24px;
+      margin: 24px 0 0;
+      overflow: hidden;
+      white-space: pre;
+      color: var(--bg);
+    }
+    .slide.dark .code-block {
+      background: color-mix(in oklch, var(--fg) 88%, var(--bg));
+      color: var(--bg);
+      border-color: color-mix(in oklch, var(--bg) 16%, transparent);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 28px;
+      font-size: 16px;
+      table-layout: fixed;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .data-table th {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: color-mix(in oklch, var(--bg) 62%, transparent);
+      font-weight: 650;
+    }
+    .slide.dark .data-table th, .slide.dark .data-table td {
+      border-color: color-mix(in oklch, var(--bg) 16%, transparent);
+    }
+    .speaker-notes { display: none; }
+
+    .deck-controls {
+      position: fixed;
+      right: 32px;
+      bottom: 66px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    .deck-nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--accent-on);
+      font-family: var(--font-body);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: var(--elev-raised);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+    .deck-nav-btn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      color: var(--surface);
+    }
+    .deck-nav-btn:active { transform: translateY(1px); }
+    .deck-nav-btn:not(:disabled):active {
+      background: var(--accent-active);
+      border-color: var(--accent-active);
+      color: var(--accent-on);
+    }
+    .deck-nav-btn:focus-visible {
+      outline: 3px solid var(--accent-hover);
+      outline-offset: 3px;
+    }
+    .deck-nav-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+      box-shadow: none;
+      transform: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body { scroll-behavior: auto; }
+      .deck-progress, .deck-nav-btn { transition: none; }
+    }
+
+    @media (max-width: 900px), (max-height: 720px) {
+      body { font-size: 16px; }
+      .slide {
+        padding: 34px 28px 92px;
+        justify-content: flex-start;
+        overflow-y: auto;
+      }
+      .slide.hero { padding-block: 52px 92px; }
+      .two-col,
+      .ba-grid,
+      .pt-grid,
+      .pipeline,
+      .split-list,
+      .split-list.three {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .item { min-height: auto; padding: 13px 15px; }
+      .deck-hint { display: none; }
+      .deck-controls { right: 24px; bottom: 22px; }
+      .deck-counter { right: 128px; bottom: 28px; }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      html, body {
+        width: 100%;
+        height: auto;
+        display: block;
+        overflow: visible;
+        background: var(--fg);
+      }
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        break-after: page;
+        page-break-after: always;
+      }
+      .deck-counter, .deck-hint, .deck-progress, .deck-controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="slide hero light center" data-screen-label="01 기본 구성요소" data-od-id="slide-01-cover">
+    <h1 class="h-hero">AI Agent 서비스 설계</h1>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="02 AI와 LLM" data-od-id="slide-02-ai-llm">
+    <p class="eyebrow">기본 오해 정리</p>
+    <h2 class="h-xl">AI = LLM 이라는 오해</h2>
+    <div class="two-col">
+      <div>
+        <p class="lead">AI는 사람의 지능적 작업을 기계가 수행하도록 만드는 넓은 분야입니다. <strong>LLM은 그중 언어 중심 Foundation Model</strong>입니다.</p>
+        <pre class="code-block">AI
+└─ Machine Learning
+   └─ Deep Learning
+      └─ Foundation Model
+         ├─ LLM
+         └─ Multimodal Model</pre>
+      </div>
+      <div class="split-list">
+        <div class="item"><strong>예측 모델</strong><span>Random Forest, XGBoost, LightGBM</span></div>
+        <div class="item"><strong>추천 시스템</strong><span>Matrix Factorization, Wide & Deep, DeepFM</span></div>
+        <div class="item"><strong>이상 탐지</strong><span>Isolation Forest, One-Class SVM, Autoencoder</span></div>
+        <div class="item"><strong>컴퓨터 비전</strong><span>ResNet, YOLO, EfficientNet</span></div>
+        <div class="item"><strong>음성 인식</strong><span>Whisper, wav2vec 2.0, DeepSpeech</span></div>
+        <div class="item"><strong>강화학습 / 언어 모델</strong><span>DQN, PPO, AlphaZero · BERT, T5, GPT</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="03 LLM 강점" data-od-id="slide-03-llm-strengths">
+    <p class="eyebrow">Model fit</p>
+    <h2 class="h-xl">LLM이 잘하는 것</h2>
+    <p class="lead">LLM은 언어와 패턴을 다루는 데 강합니다. 핵심은 자유로운 입력을 <strong>의미 있는 구조와 작업 단위</strong>로 바꾸는 능력입니다.</p>
+    <div class="split-list three">
+      <div class="item"><strong>의도 파악</strong><span>자연어 질문에서 사용자의 목적을 해석</span></div>
+      <div class="item"><strong>구조화</strong><span>비정형 입력을 필드, 분류, JSON 형태로 변환</span></div>
+      <div class="item"><strong>요약</strong><span>긴 문맥에서 핵심을 압축</span></div>
+      <div class="item"><strong>분류·설명</strong><span>텍스트의 유형을 나누고 이유를 설명</span></div>
+      <div class="item"><strong>코드 보조</strong><span>생성, 변환, 패턴 해석을 지원</span></div>
+      <div class="item"><strong>텍스트 변환</strong><span>형식, 톤, 언어, 구조를 목적에 맞게 변경</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="04 LLM 약점" data-od-id="slide-04-llm-limits">
+    <p class="eyebrow">Risk surface</p>
+    <h2 class="h-xl">LLM이 약한 것</h2>
+    <div class="split-list three">
+      <div class="item"><strong>최신 사실</strong><span>학습 시점과 입력 컨텍스트 밖의 최신 상태를 스스로 알 수 없습니다.</span></div>
+      <div class="item"><strong>시스템 상태</strong><span>관측하지 않은 상태를 추측할 수 있습니다.</span></div>
+      <div class="item"><strong>환각</strong><span>사실 검증보다 자연스럽고 가능성 높은 문장 생성에 최적화되어 있습니다.</span></div>
+      <div class="item"><strong>긴 문맥</strong><span>모든 제약을 같은 중요도로 유지하기 어렵습니다.</span></div>
+      <div class="item"><strong>수치 계산</strong><span>계산기처럼 동작하지 않고 다음 토큰을 확률적으로 생성합니다.</span></div>
+      <div class="item"><strong>원인 구분</strong><span>가능성 높은 설명을 확정 결론처럼 표현할 수 있습니다.</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="05 최신성 환각 문맥" data-od-id="slide-05-freshness-hallucination-context">
+    <p class="eyebrow">System compensation</p>
+    <h2 class="h-xl">최신성·환각·문맥 누락 보완</h2>
+    <div class="pt-grid">
+      <div class="pt is-key">
+        <h3>1. 최신성 / 외부 상태</h3>
+        <p>DB, Metric, Log 조회 Tool을 연결하고, 조회 시점과 시간 범위를 명시하며, Tool 호출 결과를 LLM 입력에 포함합니다.</p>
+      </div>
+      <div class="pt">
+        <h3>2. 환각</h3>
+        <p>근거 중심 Prompt를 작성하고, 원인 후보와 확정 사실을 구분하며, 최종 답변 검증 레이어를 추가합니다.</p>
+      </div>
+      <div class="pt">
+        <h3>3. 문맥 누락</h3>
+        <p>입력 데이터를 구조화하고, State로 중간 결과를 관리하며, Prompt를 짧고 명확한 역할별 단계로 분리합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="06 계산과 모호함" data-od-id="slide-06-calculation-ambiguity">
+    <p class="eyebrow">Guardrails</p>
+    <h2 class="h-xl">계산 오류와 모호한 질문 보완</h2>
+    <div class="ba-grid">
+      <div class="ba-col">
+        <p class="ba-label">4. 수치 계산 / 단위 오류</p>
+        <h3>계산과 해석을 분리합니다.</h3>
+        <p>계산은 LLM 전달 전 단계에서 수행하고, rule-based check를 추가하며, 수치 결과와 자연어 해석을 역할로 분리합니다.</p>
+      </div>
+      <div class="ba-col">
+        <p class="ba-label">5. 모호한 질문</p>
+        <h3>부족한 조건을 명시적으로 다룹니다.</h3>
+        <p>필수 파라미터를 정의하고, 정보 부족 시 추가 질문을 생성하며, 기본값을 사용한 경우 답변에 명시합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide hero dark center" data-screen-label="07 도메인 기준" data-od-id="slide-07-domain-consistency">
+    <div class="eyebrow">운영 품질의 기준</div>
+    <h2 class="h-hero">도메인 기준과 답변 일관성 보완</h2>
+    <p class="lead">사내 기준, Runbook/RAG, structured output, Schema, Prompt/model version, 평가셋 기반 회귀 테스트가 답변 품질을 반복 가능하게 만듭니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="08 AI 서비스 설계" data-od-id="slide-08-service-design">
+    <p class="eyebrow">Service design</p>
+    <h2 class="h-xl">AI 서비스 설계란 무엇인가</h2>
+    <p class="lead">AI 서비스 개발에서 중요한 설계는 단순히 모델을 고르는 일이 아닙니다. <strong>LLM을 소프트웨어 시스템 안에 어떻게 배치할지 결정하는 일</strong>입니다.</p>
+    <div class="split-list">
+      <div class="item"><strong>데이터</strong><span>어떤 데이터를 LLM에 줄 것인가</span></div>
+      <div class="item"><strong>Tool</strong><span>어떤 Tool을 붙일 것인가</span></div>
+      <div class="item"><strong>State</strong><span>State를 어떻게 관리할 것인가</span></div>
+      <div class="item"><strong>Failure loop</strong><span>실패, 재시도, 검증을 어떻게 설계할 것인가</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="09 추가 질문" data-od-id="slide-09-design-questions">
+    <p class="eyebrow">Design checklist</p>
+    <h2 class="h-xl">AI 서비스 설계의 추가 질문</h2>
+    <div class="split-list">
+      <div class="item"><strong>Prompt / Schema</strong><span>어떻게 구조화할 것인가</span></div>
+      <div class="item"><strong>Log / Evaluation</strong><span>어떻게 남기고 평가할 것인가</span></div>
+      <div class="item"><strong>Permission / Approval</strong><span>권한과 승인 흐름을 어떻게 둘 것인가</span></div>
+      <div class="item"><strong>Feedback loop</strong><span>사용자의 피드백을 어떻게 다시 개선에 사용할 것인가</span></div>
+    </div>
+    <p class="callout">따라서 AI 서비스 개발에는 <strong>프롬프트 작성 능력</strong>뿐 아니라 소프트웨어 설계와 구현 역량이 함께 필요합니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide hero light center" data-screen-label="10 완벽한 서비스는 없다" data-od-id="slide-10-not-perfect">
+    <div class="quote-mark">"</div>
+    <p class="quote-text">AI 서비스는 처음부터 완벽한 답변을 내는 제품이라기보다,<br>실제 사용 데이터와 실패 사례를 축적하면서<br>개선되도록 설계해야 하는 시스템입니다.</p>
+    <p class="quote-author">핵심은 한 번 좋은 답을 내는 것이 아니라, 실패를 다음 개선으로 연결하는 구조입니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="11 축적할 데이터" data-od-id="slide-11-data-to-collect">
+    <p class="eyebrow">Operational memory</p>
+    <h2 class="h-xl">무엇을 축적해야 하는가</h2>
+    <div class="split-list three">
+      <div class="item"><strong>사용자 질문</strong><span>요청의 원문과 의도</span></div>
+      <div class="item"><strong>입력 파라미터</strong><span>모델과 Tool에 들어간 조건</span></div>
+      <div class="item"><strong>Agent 실행 경로</strong><span>어떤 절차로 판단했는가</span></div>
+      <div class="item"><strong>Tool 호출 결과</strong><span>외부 조회와 실행 결과</span></div>
+      <div class="item"><strong>중간 분석 결과</strong><span>후보, 판단 근거, 상태</span></div>
+      <div class="item"><strong>최종 답변</strong><span>사용자에게 반환된 결과</span></div>
+      <div class="item"><strong>Quality Gate 결과</strong><span>검증 통과/실패 기록</span></div>
+      <div class="item"><strong>사용자 피드백</strong><span>정정, 선호, 만족도</span></div>
+      <div class="item"><strong>사후 실제 원인</strong><span>운영 확인으로 확정된 사실</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="12 데이터 사용처" data-od-id="slide-12-data-uses">
+    <p class="eyebrow">Improvement loop</p>
+    <h2 class="h-xl">축적한 데이터는 어디에 쓰는가</h2>
+    <div class="split-list">
+      <div class="item"><strong>Prompt 개선</strong><span>더 안정적인 지시 구조로 조정</span></div>
+      <div class="item"><strong>Routing 개선</strong><span>질문 유형별 경로 최적화</span></div>
+      <div class="item"><strong>평가 데이터셋 구축</strong><span>반복 검증 가능한 케이스화</span></div>
+      <div class="item"><strong>회귀 테스트</strong><span>품질 저하를 배포 전에 감지</span></div>
+      <div class="item"><strong>Runbook/RAG 자료화</strong><span>근거 문서와 운영 지식으로 재사용</span></div>
+      <div class="item"><strong>장애 패턴 정리</strong><span>자주 나오는 실패를 구조화</span></div>
+    </div>
+    <p class="callout">AI 서비스는 데이터를 축적할수록 <strong>도메인에 맞게 똑똑해질 수 있습니다.</strong></p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="13 작업 방식 설계" data-od-id="slide-13-repeatable-work">
+    <p class="eyebrow">Skill mindset</p>
+    <h2 class="h-xl">반복 가능한 작업 방식도 설계해야 한다</h2>
+    <p class="lead">Tool, State, Logging만으로 Agent 품질이 자동으로 안정화되지는 않습니다. 운영에서는 Agent가 매번 같은 기준과 절차로 일하도록 작업 방식을 명시해야 합니다.</p>
+    <div class="split-list">
+      <div class="item"><strong>분석 순서</strong><span>어떤 순서로 문제를 분석할 것인가</span></div>
+      <div class="item"><strong>리뷰 기준</strong><span>어떤 기준으로 코드를 리뷰할 것인가</span></div>
+      <div class="item"><strong>완료 기준</strong><span>어떤 테스트를 통과해야 완료로 볼 것인가</span></div>
+      <div class="item"><strong>승인 조건</strong><span>어떤 상황에서 사용자 승인이나 추가 질문이 필요한가</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="14 Skill 정의" data-od-id="slide-14-skill-definition">
+    <p class="eyebrow">Reusable operating manual</p>
+    <h2 class="h-xl">Skill은 Agent의 작업 방식이다</h2>
+    <p class="lead">Skill은 Agent에게 “어떻게 일해야 하는지”를 알려주는 운영 매뉴얼에 가깝습니다.</p>
+    <div class="split-list three">
+      <div class="item"><strong>반복 작업 절차</strong></div>
+      <div class="item"><strong>코드 리뷰 기준</strong></div>
+      <div class="item"><strong>테스트 기준</strong></div>
+      <div class="item"><strong>배포 절차</strong></div>
+      <div class="item"><strong>문서화 방식</strong></div>
+      <div class="item"><strong>프로젝트 컨벤션과 금지 사항</strong></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="15 Skill 생태계" data-od-id="slide-15-skill-ecosystem">
+    <p class="eyebrow">Examples</p>
+    <h2 class="h-xl">Skill 생태계 예시</h2>
+    <div class="pt-grid">
+      <div class="pt is-key">
+        <h3>Compound Engineering</h3>
+        <p>brainstorm, plan, work, review, commit/push/PR 같은 개발 workflow를 구조화합니다. 기능 아이디어를 요구사항, 구현 계획, 리뷰, PR 생성까지 일관된 절차로 수행합니다.</p>
+      </div>
+      <div class="pt">
+        <h3>addyosmani/agent-skills</h3>
+        <p>AI coding agent를 위한 production-grade engineering skills 모음입니다. 접근성 점검, 성능 최적화, 코드 품질 리뷰, 테스트 작성을 반복 작업으로 수행합니다.</p>
+      </div>
+      <div class="pt">
+        <h3>nexu-io/open-design</h3>
+        <p>coding agent를 design engine처럼 사용해 prototype, landing page, dashboard, slide 산출물을 만듭니다. 자연어 요구사항을 기반으로 빠르게 생성하고 반복 수정합니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide hero dark center" data-screen-label="16 LangChain" data-od-id="slide-16-langchain">
+    <div class="eyebrow">Framework</div>
+    <h2 class="h-hero">LangChain</h2>
+    <p class="lead">LangChain은 단순 모델 호출 wrapper라기보다 <strong>모델, Tool, Agent loop를 빠르게 구성하기 위한 상위 프레임워크</strong>에 가깝습니다.</p>
+    <aside class="speaker-notes">출처: LangChain 공식 문서 Overview, Agents.</aside>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="17 LangGraph" data-od-id="slide-17-langgraph">
+    <p class="eyebrow">Orchestration runtime</p>
+    <h2 class="h-xl">LangGraph</h2>
+    <p class="lead">LangGraph는 상태를 유지하는 장기 실행 Agent workflow를 만들고 운영하기 위한 orchestration framework/runtime입니다.</p>
+    <div class="pipeline">
+      <div class="step"><span class="nb">01</span><h3>State</h3><p>Agent가 작업 중 유지해야 하는 현재 상태</p></div>
+      <div class="step"><span class="nb">02</span><h3>Node</h3><p>모델 호출, Tool 실행, 검증 같은 작업 단계</p></div>
+      <div class="step"><span class="nb">03</span><h3>Edge</h3><p>다음에 어떤 단계로 갈지 결정하는 흐름</p></div>
+      <div class="step"><span class="nb">04</span><h3>Persistence</h3><p>실패하거나 중단되어도 이어서 실행할 수 있는 상태 저장</p></div>
+    </div>
+    <p class="callout">Human-in-the-loop은 중요한 단계에서 사람의 검토나 승인을 끼워 넣는 구조입니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="18 역할 비교" data-od-id="slide-18-langchain-langgraph">
+    <p class="eyebrow">Comparison</p>
+    <h2 class="h-xl">LangChain과 LangGraph의 역할</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>구분</th><th>LangChain</th><th>LangGraph</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>중심 역할</td><td>Agent framework와 Model/Tool 통합</td><td>상태 기반 Agent orchestration runtime</td></tr>
+        <tr><td>주 관심사</td><td>Model, Tool, Agent loop, Middleware</td><td>State, Node, Edge, Routing, Persistence</td></tr>
+        <tr><td>흐름 구조</td><td>빠르게 시작할 수 있는 사전 구성 Agent 구조</td><td>조건부 분기, 반복, 병렬, 재시도, 장기 실행</td></tr>
+        <tr><td>적합한 작업</td><td>LLM 앱, Tool calling Agent, 구조화 출력</td><td>Multi-Agent, human-in-the-loop, 장기 실행 workflow</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="19 RAG 활용" data-od-id="slide-19-rag">
+    <p class="eyebrow">Grounding</p>
+    <h2 class="h-xl">RAG 활용 방안</h2>
+    <p class="lead">RAG는 LLM이 모든 지식을 내부에 기억하도록 만드는 방식이 아닙니다. 필요한 시점에 외부 지식과 근거 문서를 검색해 답변에 반영하는 구조입니다.</p>
+    <div class="split-list">
+      <div class="item"><strong>운영 근거 검색</strong><span>장애 대응 Runbook, 사내 DB 운영 매뉴얼, 정기 점검 절차</span></div>
+      <div class="item"><strong>사례 기반 응답</strong><span>과거 장애 사례, 장애 보고서 템플릿, FAQ와 문의 이력</span></div>
+      <div class="item"><strong>기술 지식 보강</strong><span>SQL 튜닝 가이드, 서비스별 운영 정책</span></div>
+      <div class="item"><strong>줄이는 문제</strong><span>최신성 한계, 도메인 기준 부족, 근거 부족</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="20 MCP 개념" data-od-id="slide-20-mcp">
+    <p class="eyebrow">Protocol boundary</p>
+    <h2 class="h-xl">MCP 개념</h2>
+    <p class="lead">MCP = Model Context Protocol. 핵심은 Tool을 애플리케이션 내부 함수가 아니라 <strong>표준 인터페이스를 가진 외부 능력</strong>으로 분리하는 것입니다.</p>
+    <div class="two-col">
+      <div>
+        <h3 class="h-md">MCP Server가 제공하는 것</h3>
+        <ul class="compact-list">
+          <li>Tool: 모델이 호출할 수 있는 기능</li>
+          <li>Resource: 모델이 참고할 수 있는 데이터</li>
+          <li>Prompt: 재사용 가능한 지시 템플릿</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="h-md">MCP 연결 구조</h3>
+        <pre class="code-block">Server
+├─ Tool
+├─ Resource
+└─ Prompt
+
+Client
+└─ Server에 연결해
+   기능을 모델/Agent에게 노출</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="21 일반 Tool과 MCP" data-od-id="slide-21-tool-vs-mcp">
+    <p class="eyebrow">Responsibility split</p>
+    <h2 class="h-xl">일반 Tool과 MCP의 차이</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>구분</th><th>일반 Tool</th><th>MCP</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>연결 방식</td><td>앱 내부 함수로 직접 연결</td><td>표준 프로토콜로 Server 연결</td></tr>
+        <tr><td>재사용성</td><td>해당 앱에 종속되기 쉬움</td><td>여러 앱/Agent에서 재사용 가능</td></tr>
+        <tr><td>확장 방식</td><td>코드 수정으로 Tool 추가</td><td>MCP Server를 연결해 확장</td></tr>
+        <tr><td>책임 분리</td><td>Agent 코드와 Tool 구현이 가까움</td><td>Agent와 Tool 제공 계층을 분리</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- --- -->
+  <section class="slide hero light center" data-screen-label="22 A2A 개념" data-od-id="slide-22-a2a">
+    <div class="eyebrow">Agent-to-Agent</div>
+    <h2 class="h-hero">A2A 개념</h2>
+    <p class="lead">A2A는 서로 다른 Agent가 작업을 위임하고, 메시지를 주고받고, 결과를 돌려주는 협업 구조입니다.</p>
+    <div class="split-list three">
+      <div class="item"><strong>Agent Discovery</strong></div>
+      <div class="item"><strong>Task Delegation</strong></div>
+      <div class="item"><strong>Message Exchange</strong></div>
+      <div class="item"><strong>결과 반환</strong></div>
+      <div class="item"><strong>독립 Agent 서비스 간 협업</strong></div>
+      <div class="item"><strong>중앙 Orchestrator와 전문 Agent 분리</strong></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="23 A2A 필요 시점" data-od-id="slide-23-a2a-when">
+    <p class="eyebrow">When to split agents</p>
+    <h2 class="h-xl">A2A는 언제 필요한가</h2>
+    <div class="split-list">
+      <div class="item"><strong>독립 배포</strong><span>Agent를 팀/도메인별로 독립 배포해야 할 때</span></div>
+      <div class="item"><strong>명확한 책임 경계</strong><span>DB Agent, OS Agent, Log Agent처럼 역할이 분리될 때</span></div>
+      <div class="item"><strong>이기종 연결</strong><span>서로 다른 프레임워크나 시스템의 Agent를 연결해야 할 때</span></div>
+      <div class="item"><strong>전문 Agent 위임</strong><span>중앙 Orchestrator가 전문 Agent에게 작업을 위임해야 할 때</span></div>
+      <div class="item"><strong>운영 표준</strong><span>Agent 간 인증, 메시지 표준, 장애 전파 관리가 필요할 때</span></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide hero dark center" data-screen-label="24 Harness Engineering" data-od-id="slide-24-harness-engineering">
+    <div class="eyebrow">Closing frame</div>
+    <h2 class="h-hero">Harness Engineering</h2>
+    <p class="lead">Harness Engineering은 모델 주변 실행 환경을 설계하는 관점입니다.<br>품질은 모델 밖의 데이터 연결, Tool 설계, Prompt/Schema, Logging, Evaluation, 권한 관리, 검증 루프에서 결정됩니다.</p>
+    <div class="pipeline">
+      <div class="step"><span class="nb">01</span><h3>모델 상향 평준화</h3><p>좋은 모델만으로는 차별화가 어렵습니다.</p></div>
+      <div class="step"><span class="nb">02</span><h3>병목은 모델 밖</h3><p>데이터, Tool, 평가, 권한이 안정성을 결정합니다.</p></div>
+      <div class="step"><span class="nb">03</span><h3>Agentic application</h3><p>State, Workflow, Verification, Observability가 필수입니다.</p></div>
+      <div class="step"><span class="nb">04</span><h3>개선 루프</h3><p>실패 사례를 축적하고 다시 개선하는 구조가 필요합니다.</p></div>
+    </div>
+  </section>
+
+  <!-- chrome -->
+  <div class="deck-progress" id="deck-progress" aria-hidden></div>
+  <div class="deck-controls" aria-label="슬라이드 이동">
+    <button class="deck-nav-btn" id="deck-prev" type="button" aria-label="이전 슬라이드">‹</button>
+    <button class="deck-nav-btn" id="deck-next" type="button" aria-label="다음 슬라이드">›</button>
+  </div>
+  <div class="deck-counter"  id="deck-counter" aria-live="polite">1 / 24</div>
+  <div class="deck-hint">← / → · scroll · swipe</div>
+
+  <script>
+    /*
+      Five hard rules for deck nav inside an iframe (the OD preview is one).
+      The naive `document.body.scrollLeft` pattern silently fails: clicks
+      register, but keyboard does nothing, and the counter freezes at "1 / N"
+      while the user is on slide 6.
+
+      1. Detect the real scroller — body OR documentElement, depending.
+      2. Listen for scroll on BOTH window and document, capture phase.
+      3. Listen for keydown on BOTH window and document, capture phase.
+      4. Auto-focus body so arrow keys work without an upfront click.
+      5. Never use Element.scrollIntoView — it can yank the host page.
+    */
+    (function () {
+      var slides   = document.querySelectorAll('.slide');
+      var counter  = document.getElementById('deck-counter');
+      var progress = document.getElementById('deck-progress');
+      var prevBtn  = document.getElementById('deck-prev');
+      var nextBtn  = document.getElementById('deck-next');
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+      var KEY      = 'od-deck-pos';
+      var active   = 0;
+
+      function scrollContainers() {
+        return [document.scrollingElement, document.documentElement, document.body]
+          .filter(Boolean)
+          .filter(function (el, idx, arr) { return arr.indexOf(el) === idx; });
+      }
+      function overflowX(el) {
+        if (!el) return 0;
+        return Math.max(0, (el.scrollWidth || 0) - (el.clientWidth || 0));
+      }
+      function scrollLeftOf(el) {
+        if (!el) return 0;
+        try { return Number(el.scrollLeft) || 0; } catch (_) { return 0; }
+      }
+      function activeScrollLeft() {
+        var candidates = scrollContainers();
+        var best = 0;
+        for (var i = 0; i < candidates.length; i++) {
+          var left = scrollLeftOf(candidates[i]);
+          if (Math.abs(left) > Math.abs(best)) best = left;
+        }
+        return best;
+      }
+      function scroller() {
+        var candidates = scrollContainers();
+        var best = candidates[0] || document.documentElement;
+        var bestScore = -1;
+        for (var i = 0; i < candidates.length; i++) {
+          var el = candidates[i];
+          var score = overflowX(el) + Math.abs(scrollLeftOf(el)) * 2;
+          if (score > bestScore) {
+            best = el;
+            bestScore = score;
+          }
+        }
+        return best;
+      }
+      function scrollToLeft(left, behavior) {
+        var candidates = scrollContainers();
+        for (var i = 0; i < candidates.length; i++) {
+          try { candidates[i].scrollLeft = left; } catch (_) {}
+          try { candidates[i].scrollTo({ left: left, behavior: behavior || 'smooth' }); } catch (_) {}
+        }
+      }
+      function setActive(i) {
+        active = i;
+        if (counter)  counter.textContent  = (i + 1) + ' / ' + slides.length;
+        if (progress) progress.style.width = (((i + 1) / slides.length) * 100) + '%';
+        if (prevBtn) prevBtn.disabled = i === 0;
+        if (nextBtn) nextBtn.disabled = i === slides.length - 1;
+        try { localStorage.setItem(KEY, String(i)); } catch (_) {}
+      }
+      function go(i) {
+        var next = Math.max(0, Math.min(slides.length - 1, i));
+        setActive(next);
+        scrollToLeft(next * window.innerWidth, reduceMotion && reduceMotion.matches ? 'auto' : 'smooth');
+      }
+      function syncFromScroll() {
+        var i = Math.round(activeScrollLeft() / window.innerWidth);
+        if (i !== active && i >= 0 && i < slides.length) setActive(i);
+      }
+      function onKey(e) {
+        if (e.defaultPrevented) return;
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+        if      (e.key === 'ArrowRight' || e.key === ' '       || e.key === 'PageDown') { e.preventDefault(); go(active + 1); }
+        else if (e.key === 'ArrowLeft'  || e.key === 'PageUp')                            { e.preventDefault(); go(active - 1); }
+        else if (e.key === 'Home')                                                        { e.preventDefault(); go(0); }
+        else if (e.key === 'End')                                                         { e.preventDefault(); go(slides.length - 1); }
+      }
+
+      // listen on both surfaces, capture phase
+      window.addEventListener('keydown', onKey, true);
+      document.addEventListener('keydown', onKey, true);
+      document.addEventListener('scroll', syncFromScroll, { passive: true, capture: true });
+      window.addEventListener('scroll', syncFromScroll,   { passive: true });
+      if (prevBtn) prevBtn.addEventListener('click', function () { go(active - 1); });
+      if (nextBtn) nextBtn.addEventListener('click', function () { go(active + 1); });
+
+      // auto-focus
+      document.body.setAttribute('tabindex', '-1');
+      document.body.style.outline = 'none';
+      function focusDeck() { try { window.focus(); document.body.focus({ preventScroll: true }); } catch (_) {} }
+      document.addEventListener('mousedown', focusDeck);
+      window.addEventListener('load', focusDeck);
+      focusDeck();
+
+      // restore last-seen position
+      try {
+        var saved = parseInt(localStorage.getItem(KEY) || '0', 10);
+        if (!isNaN(saved) && saved >= 0 && saved < slides.length) {
+          setActive(saved);
+          scrollToLeft(saved * window.innerWidth, 'instant');
+        } else {
+          setActive(0);
+        }
+      } catch (_) { setActive(0); }
+    })();
+  </script>
+</body>
+</html>
