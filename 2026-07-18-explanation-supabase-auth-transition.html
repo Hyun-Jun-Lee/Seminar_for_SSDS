@@ -1,0 +1,925 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Supabase Auth 전환 diff 설명서</title>
+  <style>
+    :root {
+      --ink: #171311;
+      --muted: #6f625a;
+      --canvas: #fffaf4;
+      --paper: #ffffff;
+      --sand: #f3dfc8;
+      --terracotta: #bf6b52;
+      --terracotta-deep: #844331;
+      --lilac: #e8ddff;
+      --cream: #fff0cf;
+      --navy: #1e2636;
+      --mint: #dcefe6;
+      --line: rgba(23, 19, 17, 0.14);
+      --soft-line: rgba(23, 19, 17, 0.08);
+      --good: #1f7a4d;
+      --bad: #a43f37;
+      --shadow: 0 18px 48px rgba(75, 46, 31, 0.12);
+      --radius-lg: 28px;
+      --radius-md: 18px;
+      --radius-sm: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 0%, rgba(191, 107, 82, 0.16), transparent 32rem),
+        radial-gradient(circle at 90% 12%, rgba(232, 221, 255, 0.72), transparent 30rem),
+        var(--canvas);
+      font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.68;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 72px;
+    }
+
+    .hero {
+      display: grid;
+      gap: 28px;
+      padding: 44px;
+      border-radius: 36px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--soft-line);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      gap: 8px;
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--terracotta-deep);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      background: #fff7ee;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      letter-spacing: -0.045em;
+      line-height: 1.04;
+    }
+
+    h1 {
+      max-width: 900px;
+      font-size: clamp(42px, 7vw, 86px);
+      font-weight: 760;
+    }
+
+    h2 {
+      font-size: clamp(34px, 5vw, 58px);
+      margin-bottom: 18px;
+    }
+
+    h3 {
+      font-size: clamp(24px, 3vw, 34px);
+      margin: 28px 0 12px;
+    }
+
+    p {
+      margin: 0 0 16px;
+    }
+
+    .lead {
+      max-width: 850px;
+      color: var(--muted);
+      font-size: clamp(18px, 2vw, 22px);
+    }
+
+    .toc {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .toc a {
+      display: block;
+      min-height: 88px;
+      padding: 18px;
+      border-radius: 20px;
+      background: #191513;
+      color: #fffaf4;
+      text-decoration: none;
+      transition: transform 180ms ease, background 180ms ease;
+    }
+
+    .toc a:hover {
+      transform: translateY(-3px);
+      background: var(--terracotta-deep);
+    }
+
+    .toc strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .toc span {
+      color: rgba(255, 250, 244, 0.72);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    section {
+      margin-top: 34px;
+      padding: 38px;
+      border-radius: var(--radius-lg);
+      background: var(--paper);
+      border: 1px solid var(--soft-line);
+      box-shadow: 0 10px 30px rgba(75, 46, 31, 0.06);
+    }
+
+    section.color {
+      background: var(--sand);
+    }
+
+    section.inverse {
+      background: var(--navy);
+      color: #fffaf4;
+    }
+
+    section.inverse .muted,
+    section.inverse p {
+      color: rgba(255, 250, 244, 0.78);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .card.dark {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .card h4 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+    }
+
+    .callout {
+      margin: 22px 0;
+      padding: 18px 20px;
+      border-left: 5px solid var(--terracotta);
+      border-radius: 18px;
+      background: #fff4e4;
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .diagram {
+      margin: 24px 0;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      background: #fffdf9;
+      overflow-x: auto;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr));
+      align-items: stretch;
+      gap: 12px;
+      min-width: 780px;
+    }
+
+    .node {
+      position: relative;
+      padding: 16px;
+      min-height: 128px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .node::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -15px;
+      transform: translateY(-50%);
+      color: var(--terracotta);
+      font-weight: 900;
+      font-size: 22px;
+    }
+
+    .node:last-child::after {
+      display: none;
+    }
+
+    .node b {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+
+    .node span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.38;
+    }
+
+    .mini-ui {
+      display: grid;
+      grid-template-columns: 310px 1fr;
+      gap: 20px;
+      align-items: center;
+      margin: 24px 0;
+    }
+
+    .phone {
+      width: 310px;
+      min-height: 560px;
+      padding: 18px;
+      border-radius: 42px;
+      background: #171311;
+      box-shadow: 0 20px 52px rgba(23, 19, 17, 0.28);
+    }
+
+    .screen {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 524px;
+      padding: 18px;
+      border-radius: 30px;
+      background: #fffaf4;
+    }
+
+    .status-pill {
+      width: 76px;
+      height: 6px;
+      margin: 0 auto 10px;
+      border-radius: 999px;
+      background: rgba(23, 19, 17, 0.18);
+    }
+
+    .login-button {
+      margin-top: auto;
+      padding: 14px 18px;
+      border-radius: 999px;
+      background: #171311;
+      color: #fff;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    .bubble {
+      max-width: 86%;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: #f3dfc8;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .bubble.me {
+      margin-left: auto;
+      background: #171311;
+      color: #fff;
+    }
+
+    .data-map {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+    }
+
+    .table th,
+    .table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--soft-line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th {
+      background: #171311;
+      color: #fffaf4;
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 7px;
+      background: rgba(191, 107, 82, 0.12);
+      color: var(--terracotta-deep);
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      margin: 18px 0;
+      padding: 18px;
+      border-radius: 18px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      background: #171311;
+      color: #fffaf4;
+      font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #171311;
+      color: #fffaf4;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .quiz-card {
+      margin-top: 18px;
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: #fffdf9;
+    }
+
+    .quiz-card h4 {
+      margin: 0 0 14px;
+      font-size: 18px;
+    }
+
+    .answers {
+      display: grid;
+      gap: 10px;
+    }
+
+    .answers button {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+    }
+
+    .answers button:hover {
+      transform: translateY(-1px);
+      border-color: var(--terracotta);
+      background: #fff7ee;
+    }
+
+    .answers button.correct {
+      border-color: rgba(31, 122, 77, 0.45);
+      background: rgba(31, 122, 77, 0.10);
+    }
+
+    .answers button.wrong {
+      border-color: rgba(164, 63, 55, 0.45);
+      background: rgba(164, 63, 55, 0.10);
+    }
+
+    .feedback {
+      min-height: 28px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .footer {
+      margin-top: 34px;
+      padding: 28px;
+      border-radius: 28px;
+      background: #171311;
+      color: rgba(255, 250, 244, 0.8);
+    }
+
+    @media (max-width: 860px) {
+      .hero,
+      section {
+        padding: 26px;
+      }
+
+      .toc,
+      .grid,
+      .grid.three,
+      .mini-ui,
+      .data-map {
+        grid-template-columns: 1fr;
+      }
+
+      .phone {
+        width: 100%;
+        max-width: 330px;
+        margin: 0 auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header class="hero">
+      <span class="eyebrow">Diff Explanation · 2026-07-18</span>
+      <h1>Curitalk 인증의 중심축을 FastAPI JWT에서 Supabase Auth로 옮긴 변경</h1>
+      <p class="lead">
+        이번 diff는 단순히 로그인 API 하나를 바꾼 것이 아니에요. 누가 사용자인지 판단하는 권한의 원천을
+        백엔드 자체 JWT에서 Supabase Auth 세션으로 옮기고, FastAPI는 대화·검색·문법 피드백이라는
+        제품 로직에 더 집중하도록 정리한 변화예요.
+      </p>
+      <nav class="toc" aria-label="Table of contents">
+        <a href="#background"><strong>1. Background</strong><span>기존 인증 구조와 왜 바꿨는지</span></a>
+        <a href="#intuition"><strong>2. Intuition</strong><span>핵심 직관과 예시 데이터 흐름</span></a>
+        <a href="#code"><strong>3. Code</strong><span>백엔드·DB·Flutter 변경 walkthrough</span></a>
+        <a href="#quiz"><strong>4. Quiz</strong><span>이 PR을 이해했는지 확인하는 문제</span></a>
+      </nav>
+    </header>
+
+    <section id="background">
+      <span class="eyebrow">Background</span>
+      <h2>인증은 “비밀번호 확인”보다 더 넓은 문제예요</h2>
+      <p>
+        앱에서 인증은 보통 로그인 화면 하나처럼 보입니다. 하지만 시스템 안쪽에서는 훨씬 많은 일이 일어나요.
+        사용자가 누구인지 증명하고, 토큰이 아직 유효한지 확인하고, 만료되면 갱신하고, 서버가 사용자별 데이터를
+        안전하게 분리해야 합니다. Curitalk에서는 특히 대화 기록, 검색 준비 카드, 문법 피드백이 모두
+        사용자별로 묶이기 때문에 인증은 제품 데이터의 울타리 역할을 해요.
+      </p>
+      <p>
+        기존 구조에서는 FastAPI가 이 울타리의 대부분을 직접 들고 있었습니다. 이메일/비밀번호 로그인,
+        Google 모바일 로그인, 개발 토큰, refresh token rotation, logout revoke까지 백엔드가 직접 처리했고,
+        Flutter 앱은 그 결과로 받은 자체 <code>access_token</code>과 <code>refresh_token</code>을 저장했습니다.
+      </p>
+
+      <div class="diagram" aria-label="Before authentication flow">
+        <div class="flow">
+          <div class="node"><b>Flutter</b><span>Google SDK에서 id token 획득</span></div>
+          <div class="node"><b>FastAPI</b><span><code>/auth/google/mobile</code>로 Google token 검증</span></div>
+          <div class="node"><b>DB users</b><span>앱 사용자 row 생성 또는 조회</span></div>
+          <div class="node"><b>FastAPI JWT</b><span>자체 access/refresh token pair 발급</span></div>
+          <div class="node"><b>API 요청</b><span>FastAPI JWT를 Bearer로 전달</span></div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>기존 구조의 부담</strong>
+        로그인 제공자가 늘어날수록 FastAPI가 OAuth 세부사항, token refresh, revoke, 보안 저장 정책을 계속 떠안게 됩니다.
+        모바일 앱 배포 전에는 가능하지만, 실제 운영으로 갈수록 “영어 회화 제품”보다 “인증 서버”를 만드는 비중이 커져요.
+      </div>
+
+      <h3>이번 변경의 좁은 배경: Supabase를 세션 권한자로 삼기</h3>
+      <p>
+        Supabase Auth를 쓰면 Google 로그인과 세션 갱신은 Supabase SDK가 맡고, FastAPI는 Supabase가 발급한
+        access token만 검증하면 됩니다. 말하자면 여권 발급소는 Supabase이고, FastAPI는 입구에서 여권을 확인하는
+        서비스 게이트가 됩니다. FastAPI는 여전히 중요한 역할을 해요. LLM API 키, 검색 품질 판단, 대화 생성,
+        문법 피드백 같은 서버 전용 로직은 계속 FastAPI 뒤에 남아 있습니다.
+      </p>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>영역</th>
+            <th>이전</th>
+            <th>이후</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>세션 권한자</td>
+            <td>FastAPI 자체 JWT와 refresh token</td>
+            <td>Supabase Auth session</td>
+          </tr>
+          <tr>
+            <td>모바일 로그인</td>
+            <td>Google id token을 FastAPI에 보내 자체 token pair 발급</td>
+            <td>Google id/access token으로 Supabase session 생성</td>
+          </tr>
+          <tr>
+            <td>사용자 테이블</td>
+            <td><code>users</code>와 <code>refresh_tokens</code></td>
+            <td><code>profiles</code>, id는 Supabase user id</td>
+          </tr>
+          <tr>
+            <td>백엔드 인증 API</td>
+            <td>register, login, dev token, google/mobile, refresh, logout, me</td>
+            <td>primary path는 <code>GET /api/auth/me</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="intuition" class="color">
+      <span class="eyebrow">Intuition</span>
+      <h2>핵심 직관은 “토큰을 만들지 말고, 신뢰할 토큰을 확인하자”예요</h2>
+      <p>
+        이 변경의 본질은 책임의 재배치입니다. FastAPI는 더 이상 사용자의 로그인 세션을 직접 제조하지 않습니다.
+        대신 Supabase가 만든 access token을 받아서 “이 토큰이 우리 Supabase 프로젝트의 유효한 사용자에게 속하는가?”를
+        확인합니다. 확인이 끝나면 그 사용자의 앱 프로필을 <code>profiles</code>에 맞춰 생성하거나 갱신합니다.
+      </p>
+
+      <div class="diagram" aria-label="After authentication flow">
+        <div class="flow">
+          <div class="node"><b>Google SDK</b><span><code>idToken</code><br><code>accessToken</code></span></div>
+          <div class="node"><b>Supabase Auth</b><span>Google token을 검증하고 Supabase session 발급</span></div>
+          <div class="node"><b>Flutter Dio</b><span>현재 Supabase access token을 Bearer로 첨부</span></div>
+          <div class="node"><b>FastAPI</b><span>Supabase <code>/auth/v1/user</code>로 token 검증</span></div>
+          <div class="node"><b>profiles</b><span>claim 기반 profile upsert 후 API 처리</span></div>
+        </div>
+      </div>
+
+      <h3>장난감 예시로 보면 더 선명해져요</h3>
+      <p>
+        사용자가 Google로 로그인했고 Supabase가 다음과 같은 사용자 정보를 돌려준다고 해볼게요.
+      </p>
+      <pre>{
+  "id": "user-123",
+  "email": "jina@example.com",
+  "user_metadata": {
+    "name": "Jina",
+    "avatar_url": "https://..."
+  },
+  "app_metadata": {
+    "provider": "google"
+  }
+}</pre>
+      <p>
+        FastAPI는 이 JSON을 그대로 비즈니스 모델로 쓰지 않습니다. 앱에서 필요한 최소 claim으로 바꾼 뒤,
+        <code>profiles</code>에 다음 row를 만들거나 갱신합니다.
+      </p>
+      <pre>profiles
+id        = "user-123"
+email     = "jina@example.com"
+name      = "Jina"
+provider  = "google"
+avatar    = "https://..."</pre>
+
+      <div class="data-map">
+        <div class="card">
+          <h4>Supabase가 책임지는 것</h4>
+          <p class="muted">Google 로그인, token 발급, refresh session, sign-out, provider 확장 가능성.</p>
+        </div>
+        <div class="card">
+          <h4>FastAPI가 책임지는 것</h4>
+          <p class="muted">Supabase token 검증, profile upsert, conversation/search/grammar ownership 검증, LLM orchestration.</p>
+        </div>
+      </div>
+
+      <div class="mini-ui">
+        <div class="phone" aria-label="Simplified mobile UI">
+          <div class="screen">
+            <div class="status-pill"></div>
+            <span class="eyebrow">Curitalk</span>
+            <h3>관심사로 바로 말하기</h3>
+            <p class="muted">Google 계정으로 로그인하면 Supabase 세션이 앱 안에 저장되고, API 호출마다 현재 access token이 자동으로 붙어요.</p>
+            <div class="bubble">최근 롯데 자이언츠 경기로 대화하고 싶어요.</div>
+            <div class="bubble me">좋아요. 오늘 경기 흐름부터 영어로 말해볼까요?</div>
+            <div class="login-button">Continue with Google</div>
+          </div>
+        </div>
+        <div>
+          <h3>사용자 경험은 더 단순해져요</h3>
+          <p>
+            사용자는 여전히 Google 버튼 하나만 누릅니다. 하지만 앱 내부에서는 자체 refresh token 저장소가 아니라
+            Supabase SDK의 session이 source of truth가 됩니다. 그래서 앱 재시작, token refresh, sign-out의 의미가
+            모바일 SDK와 더 자연스럽게 맞물립니다.
+          </p>
+          <div class="callout">
+            <strong>중요한 엣지 케이스</strong>
+            이 구현은 FastAPI에서 Supabase <code>/auth/v1/user</code>를 호출하는 원격 검증 방식이에요.
+            Supabase 프로젝트가 어떤 JWT signing mode를 쓰든 비교적 안전하게 동작하지만, 보호 API 호출마다
+            네트워크 확인 비용이 생깁니다. 운영 트래픽이 커지면 JWKS 기반 로컬 검증으로 최적화할 수 있어요.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="code">
+      <span class="eyebrow">Code Walkthrough</span>
+      <h2>코드는 네 갈래로 움직였어요</h2>
+      <p>
+        diff를 파일 단위로 보면 꽤 큽니다. 하지만 읽는 순서는 단순합니다.
+        설정을 추가하고, 백엔드 인증 모델을 줄이고, DB identity를 profiles로 옮기고,
+        Flutter의 token source를 Supabase SDK로 바꿨습니다.
+      </p>
+
+      <div class="pill-row">
+        <span class="pill">Backend settings</span>
+        <span class="pill">Supabase verifier</span>
+        <span class="pill">profiles migration</span>
+        <span class="pill">Flutter session source</span>
+        <span class="pill">Docs & tests</span>
+      </div>
+
+      <h3>1. 설정: Supabase project를 명시적으로 요구하기</h3>
+      <p>
+        <code>backend/config.py</code>에는 Supabase URL, publishable key, 원격 검증 timeout, 그리고
+        <code>AUTO_CREATE_TABLES</code>가 추가됐습니다. 특히 <code>required_supabase_publishable_key</code>와
+        <code>normalized_supabase_url</code>은 누락된 환경변수를 조용히 넘기지 않고 빠르게 실패하게 만듭니다.
+      </p>
+      <pre>supabase_url: str | None = None
+supabase_publishable_key: str | None = None
+supabase_auth_verify_mode: Literal["remote"] = "remote"
+supabase_auth_timeout_seconds: float = 5.0
+auto_create_tables: bool = False</pre>
+      <p>
+        <code>backend/main.py</code>에서는 <code>Base.metadata.create_all</code>을 기본 실행하지 않도록 했어요.
+        이제 스키마는 Alembic migration으로 관리한다는 뜻입니다.
+      </p>
+
+      <h3>2. 백엔드 Auth: 자체 token 발급기를 걷어내고 verifier로 축소</h3>
+      <p>
+        가장 큰 삭제는 <code>backend/domains/auth/service.py</code>와 <code>router.py</code>에서 일어났습니다.
+        비밀번호 hash, JWT encode/decode, refresh token hash, Google callback, dev token 발급 로직이 primary path에서 제거됐어요.
+        대신 서비스는 Supabase claim을 앱 프로필로 연결하는 얇은 계층이 되었습니다.
+      </p>
+      <pre>@dataclass(frozen=True)
+class SupabaseUserClaims:
+    sub: str
+    email: str
+    name: str
+    oauth_provider: str | None = None
+    avatar_url: str | None = None</pre>
+      <p>
+        실제 token 검증은 새 파일 <code>backend/domains/auth/supabase.py</code>에 있습니다.
+        FastAPI가 받은 Bearer token을 Supabase Auth 서버의 <code>/user</code> endpoint로 확인하고,
+        응답에서 id, email, name, provider, avatar를 뽑아 앱 claim으로 바꿉니다.
+      </p>
+      <pre>response = await client.get(
+    f"{settings.supabase_auth_url}/user",
+    headers={
+        "apikey": settings.required_supabase_publishable_key,
+        "Authorization": f"Bearer {token}",
+    },
+)</pre>
+
+      <div class="callout">
+        <strong>왜 router가 작아졌을까요?</strong>
+        모바일의 primary 인증 흐름이 Supabase로 이동했기 때문에 FastAPI의 Auth router는 이제
+        <code>GET /api/auth/me</code>에 집중합니다. “로그인”이 아니라 “현재 Supabase 사용자에 대응하는 앱 프로필을 반환”하는 API가 된 거예요.
+      </div>
+
+      <h3>3. DB: users가 아니라 profiles를 앱 소유 데이터로 삼기</h3>
+      <p>
+        Supabase에는 내부 <code>auth.users</code>가 있습니다. 앱이 직접 그 테이블을 소유하려고 하면 경계가 흐려집니다.
+        그래서 앱의 표시 이름, 활성 상태, avatar 같은 확장 정보는 <code>profiles</code>에 둡니다.
+        <code>profiles.id</code>는 Supabase user id와 같고, conversation의 <code>user_id</code>도 profiles를 참조합니다.
+      </p>
+      <pre>table profiles {
+  id: UUID PRIMARY KEY        // Supabase auth.users.id와 같은 값
+  email: STRING UNIQUE
+  name: STRING
+  is_active: BOOLEAN
+  oauth_provider: STRING?
+  avatar_url: STRING?
+}</pre>
+      <p>
+        migration에는 안전장치가 들어 있습니다. 기존 <code>users</code>나 <code>conversations</code>에 데이터가 있으면
+        migration이 실패합니다. 데이터가 있는 운영 DB에서는 그냥 drop하면 안 되고, 별도 backfill migration이 필요하기 때문입니다.
+      </p>
+      <pre>if user_count or conversation_count:
+    raise RuntimeError(
+        "profiles migration requires an empty pre-Supabase users/conversations dataset."
+    )</pre>
+
+      <h3>4. Flutter: token storage가 아니라 Supabase session을 읽기</h3>
+      <p>
+        Flutter에서는 <code>supabase_flutter</code>가 추가되고, 앱 시작 시 <code>Supabase.initialize</code>가 실행됩니다.
+        <code>AppConfig</code>는 <code>SUPABASE_URL</code>과 <code>SUPABASE_PUBLISHABLE_KEY</code>를 필수 dart-define 값으로 요구합니다.
+      </p>
+      <pre>await Supabase.initialize(
+  url: AppConfig.requiredSupabaseUrl,
+  publishableKey: AppConfig.requiredSupabasePublishableKey,
+);</pre>
+      <p>
+        새 <code>SupabaseAuthService</code>는 세 가지 역할을 겸합니다.
+        현재 access token을 읽고, Supabase session을 refresh하고, Google token으로 sign-in합니다.
+        그래서 Dio interceptor는 더 이상 secure storage에서 FastAPI token pair를 읽지 않습니다.
+      </p>
+      <pre>abstract interface class SupabaseAuthService
+    implements AccessTokenProvider, SessionRefreshProvider {
+  Stream&lt;SupabaseSessionChange&gt; get authStateChanges;
+  Future&lt;bool&gt; hasCurrentSession();
+  Future&lt;void&gt; signInWithGoogleTokens({
+    required String idToken,
+    required String accessToken,
+  });
+  Future&lt;void&gt; signOut();
+}</pre>
+
+      <h3>5. 401 처리: /auth/refresh 대신 Supabase refreshSession</h3>
+      <p>
+        이전에는 API가 401을 반환하면 FastAPI의 <code>/auth/refresh</code>를 호출해 token pair를 rotate했습니다.
+        이제는 Supabase SDK의 <code>refreshSession()</code>을 호출하고, 새 access token으로 원 요청을 한 번 재시도합니다.
+        동시 401이 여러 개 와도 하나의 refresh 작업을 공유하는 구조는 유지했습니다.
+      </p>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>컴포넌트</th>
+            <th>변경 요약</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>AuthTokenInterceptor</code></td>
+            <td><code>TokenStorage</code> 대신 <code>AccessTokenProvider</code>에서 Supabase access token을 읽음</td>
+          </tr>
+          <tr>
+            <td><code>TokenRefreshInterceptor</code></td>
+            <td><code>/auth/refresh</code> POST 제거, <code>SessionRefreshProvider.refreshAccessToken</code> 사용</td>
+          </tr>
+          <tr>
+            <td><code>AuthController</code></td>
+            <td>앱 시작 시 Supabase current session 확인 후 <code>/auth/me</code> 조회</td>
+          </tr>
+          <tr>
+            <td><code>GoogleIdentityService</code></td>
+            <td>Google <code>idToken</code>뿐 아니라 Supabase sign-in에 필요한 <code>accessToken</code>도 반환</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>6. 문서와 테스트: 새 계약을 한 번에 맞추기</h3>
+      <p>
+        <code>README.md</code>, <code>docs/DSL.md</code>, <code>mobile/README.md</code>, <code>.agent/architecture.md</code>가
+        Supabase Auth 기준으로 갱신됐습니다. 테스트도 old local JWT/dev-token 중심에서 Supabase verifier, profiles repository,
+        Supabase session 기반 Flutter controller 테스트로 바뀌었습니다.
+      </p>
+      <div class="callout">
+        <strong>검증 결과</strong>
+        백엔드 전체 <code>uv run pytest</code>, 모바일 전체 <code>flutter test --no-pub</code>,
+        <code>flutter analyze --no-pub</code>, <code>uv run alembic heads</code>, <code>git diff --check</code>가 통과한 상태예요.
+      </div>
+    </section>
+
+    <section id="quiz" class="inverse">
+      <span class="eyebrow">Quiz</span>
+      <h2>이 변경을 제대로 이해했는지 확인해볼까요?</h2>
+      <p class="muted">
+        각 문제는 한 가지 답만 맞습니다. 버튼을 누르면 바로 피드백이 나와요.
+      </p>
+
+      <div class="quiz-card" data-quiz>
+        <h4>1. 이번 변경 후 모바일 앱의 primary 세션 source of truth는 무엇인가요?</h4>
+        <div class="answers">
+          <button data-correct="false" data-feedback="이전 구조에 가까워요. Secure storage는 더 이상 FastAPI token pair의 기준 저장소가 아니에요.">SecureTokenStorage에 저장된 FastAPI access/refresh token pair</button>
+          <button data-correct="true" data-feedback="맞아요. Supabase SDK의 current session이 앱 인증 상태의 기준이에요.">Supabase SDK의 current session</button>
+          <button data-correct="false" data-feedback="Google token은 Supabase session을 만들기 위한 입력이지, 앱의 지속 세션 기준은 아니에요.">Google Sign-In SDK의 idToken</button>
+          <button data-correct="false" data-feedback="profiles는 앱 사용자 데이터 row이고, 세션 자체를 보관하지는 않아요.">profiles 테이블의 is_active 값</button>
+        </div>
+        <div class="feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz>
+        <h4>2. FastAPI가 보호 API 요청에서 Supabase access token을 검증하는 현재 방식은 무엇인가요?</h4>
+        <div class="answers">
+          <button data-correct="false" data-feedback="JWKS 로컬 검증은 향후 최적화 후보지만, 현재 구현은 아니에요.">JWKS를 캐시해서 로컬에서 JWT signature를 검증한다</button>
+          <button data-correct="true" data-feedback="정답이에요. 현재는 Supabase Auth /user endpoint에 Bearer token과 apikey를 보내 검증해요.">Supabase Auth의 /auth/v1/user endpoint를 호출한다</button>
+          <button data-correct="false" data-feedback="이전 FastAPI 자체 JWT 구조가 제거됐기 때문에 JWT_SECRET_KEY로 검증하지 않아요.">JWT_SECRET_KEY로 HS256 token을 decode한다</button>
+          <button data-correct="false" data-feedback="Google API는 모바일 로그인 입력을 검증하는 쪽에 가까웠고, 현재 FastAPI bearer 검증은 Supabase가 맡아요.">Google OAuth tokeninfo endpoint를 호출한다</button>
+        </div>
+        <div class="feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz>
+        <h4>3. <code>profiles</code> 테이블을 도입한 이유로 가장 알맞은 것은 무엇인가요?</h4>
+        <div class="answers">
+          <button data-correct="false" data-feedback="비밀번호 로그인을 계속하려는 목적이 아니라, 오히려 자체 비밀번호/JWT 흐름을 줄이는 변경이에요.">이메일/비밀번호 로그인을 계속 유지하기 위해서</button>
+          <button data-correct="true" data-feedback="맞아요. Supabase가 auth.users를 관리하고, 앱은 profiles에 display name, 활성 상태, avatar 같은 자체 데이터를 둬요.">Supabase auth.users와 앱 소유 프로필 데이터를 분리하기 위해서</button>
+          <button data-correct="false" data-feedback="conversation ownership은 유지되지만, 캐싱 목적의 테이블은 아니에요.">대화 목록을 캐싱하기 위해서</button>
+          <button data-correct="false" data-feedback="refresh_tokens는 제거됐고, profiles가 refresh token을 대체하지는 않아요.">refresh token을 저장하기 위해서</button>
+        </div>
+        <div class="feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz>
+        <h4>4. API가 401을 반환했을 때 Flutter의 새 refresh 흐름은 어떻게 동작하나요?</h4>
+        <div class="answers">
+          <button data-correct="false" data-feedback="이전 구조예요. /auth/refresh endpoint는 primary path에서 제거됐어요.">FastAPI /auth/refresh에 refresh_token과 device_id를 보낸다</button>
+          <button data-correct="false" data-feedback="Google 로그인을 매번 다시 띄우지는 않아요. 먼저 Supabase session refresh를 시도합니다.">항상 Google 로그인 화면으로 즉시 보낸다</button>
+          <button data-correct="true" data-feedback="정답이에요. Supabase refreshSession 결과로 새 access token을 얻고 원 요청을 한 번 재시도해요.">Supabase refreshSession을 호출하고 새 access token으로 원 요청을 한 번 재시도한다</button>
+          <button data-correct="false" data-feedback="401을 무시하면 보호 API의 ownership 경계가 무너져요. 재시도 또는 세션 만료 처리가 필요합니다.">401을 무시하고 기존 화면 상태를 유지한다</button>
+        </div>
+        <div class="feedback" aria-live="polite"></div>
+      </div>
+
+      <div class="quiz-card" data-quiz>
+        <h4>5. migration이 기존 users/conversations 데이터가 있으면 실패하도록 한 이유는 무엇인가요?</h4>
+        <div class="answers">
+          <button data-correct="true" data-feedback="맞아요. 기존 사용자 id를 Supabase user id 기반 profiles로 안전하게 옮기려면 backfill 전략이 필요해요.">데이터가 있는 DB에서는 backfill 없이 users를 drop하면 사용자 소유 관계가 깨질 수 있기 때문</button>
+          <button data-correct="false" data-feedback="성능 문제가 아니라 데이터 보존과 identity mapping 문제예요.">Postgres에서 FK 변경이 너무 느리기 때문</button>
+          <button data-correct="false" data-feedback="SQLite 호환성보다 운영 데이터 손실 방지가 핵심이에요.">SQLite 테스트 DB에서만 migration을 실행하기 위해서</button>
+          <button data-correct="false" data-feedback="profiles는 계속 필요해요. 실패 조건은 테이블 도입을 막기 위한 것이 아니라 안전한 전환을 강제하기 위한 장치예요.">profiles 테이블 생성을 선택 사항으로 만들기 위해서</button>
+        </div>
+        <div class="feedback" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <p>
+        한 줄로 요약하면, 이번 diff는 Curitalk이 직접 인증 서버가 되려던 길에서 한 발 물러나
+        Supabase Auth를 신뢰 경계의 앞단에 세운 변경입니다. 그 덕분에 FastAPI는 제품의 고유한 일,
+        즉 관심사 기반 영어 대화와 AI 피드백에 더 집중할 수 있게 됐어요.
+      </p>
+    </div>
+  </main>
+
+  <script>
+    document.querySelectorAll('[data-quiz]').forEach((quiz) => {
+      const buttons = quiz.querySelectorAll('button');
+      const feedback = quiz.querySelector('.feedback');
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', () => {
+          buttons.forEach((candidate) => {
+            candidate.classList.remove('correct', 'wrong');
+            candidate.disabled = false;
+          });
+
+          const isCorrect = button.dataset.correct === 'true';
+          button.classList.add(isCorrect ? 'correct' : 'wrong');
+          feedback.textContent = button.dataset.feedback || '';
+
+          if (!isCorrect) {
+            const correct = quiz.querySelector('button[data-correct="true"]');
+            if (correct) {
+              correct.classList.add('correct');
+            }
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
