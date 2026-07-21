@@ -1263,7 +1263,37 @@
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="32 역할 비교" data-od-id="slide-32-langchain-langgraph">
+  <section class="slide dark" data-screen-label="32 ReAct 실행 루프" data-od-id="slide-32-react-loop">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">ReAct Agent의 실행 루프</h2>
+    <p class="lead">ReAct는 LLM이 답변을 바로 끝내는 방식이 아니라, 필요한 경우 Tool을 호출하고 결과를 다시 판단에 반영하는 반복 구조입니다.</p>
+    <div class="pipeline five">
+      <div class="step"><span class="nb">01</span><h3>LLM 판단</h3><p>사용자 요청과 현재 state를 보고 다음 행동을 결정합니다.</p></div>
+      <div class="step"><span class="nb">02</span><h3>Tool 호출</h3><p>외부 정보나 실행이 필요하면 tool_call을 생성합니다.</p></div>
+      <div class="step"><span class="nb">03</span><h3>Tool 결과 반영</h3><p>Tool 결과를 메시지와 state에 추가합니다.</p></div>
+      <div class="step"><span class="nb">04</span><h3>다시 판단</h3><p>추가 Tool이 필요한지, 최종 답변할 수 있는지 다시 판단합니다.</p></div>
+      <div class="step"><span class="nb">05</span><h3>최종 답변</h3><p>더 이상 tool_call이 없으면 사용자에게 답변합니다.</p></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="33 LangGraph 구성 요소" data-od-id="slide-33-langgraph-react-components">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">LangGraph에서의 구성 요소</h2>
+    <p class="lead">LangGraph는 ReAct 루프를 상태, 노드, 조건 분기로 명시해 제어할 수 있게 합니다.</p>
+    <div class="split-list three">
+      <div class="item"><strong>State</strong><span>messages, Tool 결과, 중간 판단을 유지</span></div>
+      <div class="item"><strong>LLM Node</strong><span>현재 state를 보고 답변하거나 tool_call을 생성</span></div>
+      <div class="item"><strong>Tool Node</strong><span>LLM이 요청한 Tool을 실행하고 결과를 저장</span></div>
+      <div class="item"><strong>Conditional Edge</strong><span>tool_call이 있으면 Tool Node로, 없으면 종료로 분기</span></div>
+      <div class="item"><strong>Stop Condition</strong><span>더 이상 tool_call이 없을 때 최종 답변으로 종료</span></div>
+      <div class="item"><strong>Custom Control</strong><span>검증, 승인, 재시도, 로그 수집을 graph 단계에 추가</span></div>
+    </div>
+    <p class="callout">핵심은 API 이름이 아니라, <strong>LLM 판단과 Tool 실행을 상태 기반 graph loop로 만든다는 점</strong>입니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="34 역할 비교" data-od-id="slide-34-langchain-langgraph">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">LangChain과 LangGraph의 역할</h2>
     <table class="data-table">
@@ -1280,7 +1310,7 @@
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="33 RAG 활용" data-od-id="slide-33-rag">
+  <section class="slide light" data-screen-label="35 RAG 활용" data-od-id="slide-35-rag">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">RAG 활용 방안</h2>
     <p class="lead">RAG는 LLM이 모든 지식을 내부에 기억하도록 만드는 방식이 아닙니다. 필요한 시점에 외부 지식과 근거 문서를 검색해 답변에 반영하는 구조입니다.</p>
@@ -1293,7 +1323,7 @@
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="34 MCP 개념" data-od-id="slide-34-mcp">
+  <section class="slide dark" data-screen-label="36 MCP 개념" data-od-id="slide-36-mcp">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">MCP 개념</h2>
     <p class="lead">MCP = Model Context Protocol. 핵심은 Tool을 애플리케이션 내부 함수가 아니라 <strong>표준 인터페이스를 가진 외부 능력</strong>으로 분리하는 것입니다.</p>
@@ -1321,7 +1351,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="35 일반 Tool과 MCP" data-od-id="slide-35-tool-vs-mcp">
+  <section class="slide light" data-screen-label="37 일반 Tool과 MCP" data-od-id="slide-37-tool-vs-mcp">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">일반 Tool과 MCP의 차이</h2>
     <table class="data-table">
@@ -1338,7 +1368,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide hero light center" data-screen-label="36 A2A 개념" data-od-id="slide-36-a2a">
+  <section class="slide hero light center" data-screen-label="38 A2A 개념" data-od-id="slide-38-a2a">
     <div class="eyebrow">Part 5. Agent 생태계와 연결 기술</div>
     <h2 class="h-hero">A2A 개념</h2>
     <p class="lead">A2A는 서로 다른 Agent가 작업을 위임하고, 메시지를 주고받고, 결과를 돌려주는 협업 구조입니다.</p>
@@ -1353,7 +1383,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="37 A2A 필요 시점" data-od-id="slide-37-a2a-when">
+  <section class="slide dark" data-screen-label="39 A2A 필요 시점" data-od-id="slide-39-a2a-when">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">A2A는 언제 필요한가</h2>
     <div class="split-list">
@@ -1366,7 +1396,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="38 Harness 설계 대상" data-od-id="slide-38-harness-design-targets">
+  <section class="slide light" data-screen-label="40 Harness 설계 대상" data-od-id="slide-40-harness-design-targets">
     <p class="eyebrow">Closing</p>
     <h2 class="h-xl">Harness Engineering이 설계하는 것</h2>
     <div class="split-list three">
@@ -1380,7 +1410,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="39 사고 전환" data-od-id="slide-39-harness-mindset-shift">
+  <section class="slide dark" data-screen-label="41 사고 전환" data-od-id="slide-41-harness-mindset-shift">
     <p class="eyebrow">Closing</p>
     <h2 class="h-xl">모델 중심 사고 vs Harness 중심 사고</h2>
     <div class="ba-grid">
@@ -1398,7 +1428,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="40 Harness 중요성" data-od-id="slide-40-harness-importance">
+  <section class="slide light" data-screen-label="42 Harness 중요성" data-od-id="slide-42-harness-importance">
     <p class="eyebrow">Closing</p>
     <h2 class="h-xl">왜 Harness Engineering이 중요해졌는가</h2>
     <div class="split-list">
@@ -1410,7 +1440,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide hero dark center" data-screen-label="41 Harness Engineering" data-od-id="slide-41-harness-engineering">
+  <section class="slide hero dark center" data-screen-label="43 Harness Engineering" data-od-id="slide-43-harness-engineering">
     <div class="eyebrow">Closing</div>
     <h2 class="h-hero">Harness Engineering</h2>
     <p class="lead">Harness Engineering은 모델 주변 실행 환경을 설계하는 관점입니다.<br>품질은 모델 밖의 데이터 연결, Tool 설계, Prompt/Schema, Logging, Evaluation, 권한 관리, 검증 루프에서 결정됩니다.</p>
@@ -1429,7 +1459,7 @@ Client
     <button class="deck-nav-btn" id="deck-prev" type="button" aria-label="이전 슬라이드">‹</button>
     <button class="deck-nav-btn" id="deck-next" type="button" aria-label="다음 슬라이드">›</button>
   </div>
-  <div class="deck-counter"  id="deck-counter" aria-live="polite">1 / 41</div>
+  <div class="deck-counter"  id="deck-counter" aria-live="polite">1 / 43</div>
   <div class="deck-hint">← / → · scroll · swipe</div>
 
   <script>
