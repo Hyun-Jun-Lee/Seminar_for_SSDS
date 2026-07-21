@@ -488,6 +488,17 @@
       white-space: pre;
       color: var(--bg);
     }
+    .code-block.compact {
+      font-size: 12px;
+      line-height: 1.36;
+      padding: 16px 18px;
+      margin-top: 18px;
+    }
+    .react-code-grid {
+      gap: 22px;
+      margin-top: 18px;
+    }
+    .react-code-grid .code-block { margin-top: 0; }
     .slide.dark .code-block {
       background: color-mix(in oklch, var(--fg) 88%, var(--bg));
       color: var(--bg);
@@ -1159,7 +1170,7 @@
   <section class="slide dark" data-screen-label="25 Skill 정의" data-od-id="slide-25-skill-definition">
     <p class="eyebrow">Part 4. 반복 가능한 작업 방식: Skill</p>
     <h2 class="h-xl">여기서 말하는 Skill이란?</h2>
-    <p class="lead">Skill은 Agent에게 “어떻게 일해야 하는지”를 알려주는 작업 매뉴얼입니다. 특정 제품의 기능명이라기보다, 반복 가능한 절차와 판단 기준을 구조화한 개념입니다.</p>
+    <p class="lead">Skill은 Agent가 반복 작업을 수행할 때 참고하는 절차, 판단 기준, 예시, 산출물 형식을 패키징한 작업 방식입니다. 특정 제품의 기능명이라기보다, 반복 가능한 일의 구조를 만드는 개념입니다.</p>
     <div class="split-list">
       <div class="item"><strong>개념</strong><span>Agent가 반복 작업을 수행할 때 따르는 절차, 기준, 금지 사항</span></div>
       <div class="item"><strong>구현 예시</strong><span>Claude Code나 Codex의 Skills는 이런 작업 방식을 파일과 규칙으로 패키징한 형태</span></div>
@@ -1180,12 +1191,13 @@
       <div class="item"><strong>PR 작성 Skill</strong><span>변경 요약, 검증 결과, 리스크, 배포 후 확인 항목을 일정한 형식으로 정리</span></div>
       <div class="item"><strong>발표 자료 작성 Skill</strong><span>원본 문서에서 핵심 메시지를 뽑고, 슬라이드 구조와 시각 계층을 맞춤</span></div>
     </div>
+    <p class="callout"><strong>장애 분석 Skill 예시</strong>: service/symptom/range를 입력받고 Metric → Log → Deploy 순서로 확인한 뒤 원인 후보, 근거, 조치안을 출력합니다.</p>
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="27 Skill 생태계" data-od-id="slide-27-skill-ecosystem">
+  <section class="slide light" data-screen-label="27 Skill 사례" data-od-id="slide-27-skill-cases">
     <p class="eyebrow">Part 4. 반복 가능한 작업 방식: Skill</p>
-    <h2 class="h-xl">Skill 생태계 예시</h2>
+    <h2 class="h-xl">Skill 사례</h2>
     <div class="pt-grid">
       <div class="pt is-key">
         <h3>Compound Engineering</h3>
@@ -1205,7 +1217,7 @@
   <!-- --- -->
   <section class="slide dark" data-screen-label="28 Compound Engineering" data-od-id="slide-28-compound-engineering-flow">
     <p class="eyebrow">Part 4. 반복 가능한 작업 방식: Skill</p>
-    <h2 class="h-xl">Compound Engineering이 좋은 Skill 예시인 이유</h2>
+    <h2 class="h-xl">Compound Engineering 예시</h2>
     <div class="pt-grid">
       <div class="pt is-key">
         <h3>작업을 단계로 나눔</h3>
@@ -1228,72 +1240,7 @@
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="30 LangChain" data-od-id="slide-30-langchain">
-    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
-    <h2 class="h-xl">LangChain</h2>
-    <p class="lead">LangChain은 Agent와 LLM 애플리케이션을 빠르게 만들기 위한 프레임워크입니다.</p>
-    <div class="ba-grid">
-      <div class="ba-col">
-        <p class="ba-label">1. Model / Tool 통합</p>
-        <h3>Provider 차이를 표준 인터페이스로 다룹니다.</h3>
-        <p>모델 API, 파라미터, message format이 달라도 모델과 Tool을 일관된 방식으로 연결하게 합니다.</p>
-      </div>
-      <div class="ba-col">
-        <p class="ba-label">2. Agent 기본 구조 제공</p>
-        <h3>Tool 선택과 반복 실행 루프를 빠르게 구성합니다.</h3>
-        <p>Agent는 모델과 Tool을 결합해 어떤 Tool을 사용할지 판단하고 반복적으로 작업을 수행합니다.</p>
-      </div>
-    </div>
-    <p class="callout">즉, 단순 모델 호출 wrapper라기보다 <strong>모델, Tool, Agent loop를 구성하기 위한 상위 프레임워크</strong>에 가깝습니다.</p>
-    <aside class="speaker-notes">출처: LangChain 공식 문서 Overview, Agents.</aside>
-  </section>
-
-  <!-- --- -->
-  <section class="slide light" data-screen-label="31 LangGraph" data-od-id="slide-31-langgraph">
-    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
-    <h2 class="h-xl">LangGraph</h2>
-    <p class="lead">LangGraph는 상태를 유지하는 장기 실행 Agent workflow를 만들고 운영하기 위한 orchestration framework/runtime입니다.</p>
-    <div class="pipeline">
-      <div class="step"><span class="nb">01</span><h3>State</h3><p>Agent가 작업 중 유지해야 하는 현재 상태</p></div>
-      <div class="step"><span class="nb">02</span><h3>Node</h3><p>모델 호출, Tool 실행, 검증 같은 작업 단계</p></div>
-      <div class="step"><span class="nb">03</span><h3>Edge</h3><p>다음에 어떤 단계로 갈지 결정하는 흐름</p></div>
-      <div class="step"><span class="nb">04</span><h3>Persistence</h3><p>실패하거나 중단되어도 이어서 실행할 수 있는 상태 저장</p></div>
-    </div>
-    <p class="callout">Human-in-the-loop은 중요한 단계에서 사람의 검토나 승인을 끼워 넣는 구조입니다.</p>
-  </section>
-
-  <!-- --- -->
-  <section class="slide dark" data-screen-label="32 ReAct 실행 루프" data-od-id="slide-32-react-loop">
-    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
-    <h2 class="h-xl">ReAct Agent의 실행 루프</h2>
-    <p class="lead">ReAct는 LLM이 답변을 바로 끝내는 방식이 아니라, 필요한 경우 Tool을 호출하고 결과를 다시 판단에 반영하는 반복 구조입니다.</p>
-    <div class="pipeline five">
-      <div class="step"><span class="nb">01</span><h3>LLM 판단</h3><p>사용자 요청과 현재 state를 보고 다음 행동을 결정합니다.</p></div>
-      <div class="step"><span class="nb">02</span><h3>Tool 호출</h3><p>외부 정보나 실행이 필요하면 tool_call을 생성합니다.</p></div>
-      <div class="step"><span class="nb">03</span><h3>Tool 결과 반영</h3><p>Tool 결과를 메시지와 state에 추가합니다.</p></div>
-      <div class="step"><span class="nb">04</span><h3>다시 판단</h3><p>추가 Tool이 필요한지, 최종 답변할 수 있는지 다시 판단합니다.</p></div>
-      <div class="step"><span class="nb">05</span><h3>최종 답변</h3><p>더 이상 tool_call이 없으면 사용자에게 답변합니다.</p></div>
-    </div>
-  </section>
-
-  <!-- --- -->
-  <section class="slide light" data-screen-label="33 LangGraph 구성 요소" data-od-id="slide-33-langgraph-react-components">
-    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
-    <h2 class="h-xl">LangGraph에서의 구성 요소</h2>
-    <p class="lead">LangGraph는 ReAct 루프를 상태, 노드, 조건 분기로 명시해 제어할 수 있게 합니다.</p>
-    <div class="split-list three">
-      <div class="item"><strong>State</strong><span>messages, Tool 결과, 중간 판단을 유지</span></div>
-      <div class="item"><strong>LLM Node</strong><span>현재 state를 보고 답변하거나 tool_call을 생성</span></div>
-      <div class="item"><strong>Tool Node</strong><span>LLM이 요청한 Tool을 실행하고 결과를 저장</span></div>
-      <div class="item"><strong>Conditional Edge</strong><span>tool_call이 있으면 Tool Node로, 없으면 종료로 분기</span></div>
-      <div class="item"><strong>Stop Condition</strong><span>더 이상 tool_call이 없을 때 최종 답변으로 종료</span></div>
-      <div class="item"><strong>Custom Control</strong><span>검증, 승인, 재시도, 로그 수집을 graph 단계에 추가</span></div>
-    </div>
-    <p class="callout">핵심은 API 이름이 아니라, <strong>LLM 판단과 Tool 실행을 상태 기반 graph loop로 만든다는 점</strong>입니다.</p>
-  </section>
-
-  <!-- --- -->
-  <section class="slide dark" data-screen-label="34 역할 비교" data-od-id="slide-34-langchain-langgraph">
+  <section class="slide dark" data-screen-label="30 역할 비교" data-od-id="slide-30-langchain-langgraph">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">LangChain과 LangGraph의 역할</h2>
     <table class="data-table">
@@ -1310,7 +1257,152 @@
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="35 RAG 활용" data-od-id="slide-35-rag">
+  <section class="slide dark" data-screen-label="31 LangChain" data-od-id="slide-31-langchain">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">LangChain</h2>
+    <p class="lead">LangChain은 Agent와 LLM 애플리케이션을 빠르게 만들기 위한 프레임워크입니다.</p>
+    <div class="ba-grid">
+      <div class="ba-col">
+        <p class="ba-label">1. Model / Tool 통합</p>
+        <h3>Provider 차이를 표준 인터페이스로 다룹니다.</h3>
+        <p>모델 API, 파라미터, message format이 달라도 모델과 Tool을 일관된 방식으로 연결하게 합니다.</p>
+      </div>
+      <div class="ba-col">
+        <p class="ba-label">2. Agent 기본 구조 제공</p>
+        <h3>Tool 선택과 반복 실행 루프를 빠르게 구성합니다.</h3>
+        <p>Agent는 모델과 Tool을 결합해 어떤 Tool을 사용할지 판단하고 반복적으로 작업을 수행합니다.</p>
+      </div>
+    </div>
+    <pre class="code-block compact">from langchain.chat_models import init_chat_model
+
+model = init_chat_model(
+    "openai:&lt;model-name&gt;",
+    temperature=0,
+)
+
+response = model.invoke("장애 보고서 초안을 요약해줘")
+print(response.content)</pre>
+    <aside class="speaker-notes">출처: LangChain 공식 문서 Overview, Agents.</aside>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="32 LangGraph" data-od-id="slide-32-langgraph">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">LangGraph</h2>
+    <p class="lead">LangGraph는 상태를 유지하는 장기 실행 Agent workflow를 만들고 운영하기 위한 orchestration framework/runtime입니다.</p>
+    <div class="pipeline">
+      <div class="step"><span class="nb">01</span><h3>State</h3><p>Agent가 작업 중 유지해야 하는 현재 상태</p></div>
+      <div class="step"><span class="nb">02</span><h3>Node</h3><p>모델 호출, Tool 실행, 검증 같은 작업 단계</p></div>
+      <div class="step"><span class="nb">03</span><h3>Edge</h3><p>다음에 어떤 단계로 갈지 결정하는 흐름</p></div>
+      <div class="step"><span class="nb">04</span><h3>Persistence</h3><p>실패하거나 중단되어도 이어서 실행할 수 있는 상태 저장</p></div>
+    </div>
+    <pre class="code-block compact">from langgraph.graph import StateGraph, START, END
+
+def node(state):
+    return {"messages": state["messages"] + ["hello"]}
+
+graph = StateGraph(dict)
+graph.add_node("node", node)
+graph.add_edge(START, "node")
+graph.add_edge("node", END)
+
+app = graph.compile()</pre>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="33 ReAct 실행 루프" data-od-id="slide-33-react-loop">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">ReAct Agent의 실행 루프</h2>
+    <p class="lead">ReAct는 LLM이 답변을 바로 끝내는 방식이 아니라, 필요한 경우 Tool을 호출하고 결과를 다시 판단에 반영하는 반복 구조입니다.</p>
+    <div class="pipeline five">
+      <div class="step"><span class="nb">01</span><h3>LLM 판단</h3><p>사용자 요청과 현재 state를 보고 다음 행동을 결정합니다.</p></div>
+      <div class="step"><span class="nb">02</span><h3>Tool 호출</h3><p>외부 정보나 실행이 필요하면 tool_call을 생성합니다.</p></div>
+      <div class="step"><span class="nb">03</span><h3>Tool 결과 반영</h3><p>Tool 결과를 메시지와 state에 추가합니다.</p></div>
+      <div class="step"><span class="nb">04</span><h3>다시 판단</h3><p>추가 Tool이 필요한지, 최종 답변할 수 있는지 다시 판단합니다.</p></div>
+      <div class="step"><span class="nb">05</span><h3>최종 답변</h3><p>더 이상 tool_call이 없으면 사용자에게 답변합니다.</p></div>
+    </div>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="34 ReAct 구성 요소" data-od-id="slide-34-react-components">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">ReAct 구성 요소</h2>
+    <p class="lead">ReAct 루프는 상태, 모델 판단, Tool 실행, 조건 분기로 구성됩니다. LangGraph는 이 구성 요소를 graph로 명시하게 해줍니다.</p>
+    <div class="split-list three">
+      <div class="item"><strong>State</strong><span>messages, Tool 결과, 중간 판단을 유지</span></div>
+      <div class="item"><strong>LLM Node</strong><span>현재 state를 보고 답변하거나 tool_call을 생성</span></div>
+      <div class="item"><strong>Tool Node</strong><span>LLM이 요청한 Tool을 실행하고 결과를 저장</span></div>
+      <div class="item"><strong>Conditional Edge</strong><span>tool_call이 있으면 Tool Node로, 없으면 종료로 분기</span></div>
+      <div class="item"><strong>Stop Condition</strong><span>더 이상 tool_call이 없을 때 최종 답변으로 종료</span></div>
+      <div class="item"><strong>Custom Control</strong><span>검증, 승인, 재시도, 로그 수집을 graph 단계에 추가</span></div>
+    </div>
+    <p class="callout">LLM 판단과 Tool 실행을 상태 기반 graph loop로 만든다는 점 입니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="35 create_agent 방식" data-od-id="slide-35-react-create-agent">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">ReAct 구현 1: create_agent 사용</h2>
+    <p class="lead">가장 빠른 시작 방식입니다. API는 LangChain에 있지만, 내부 실행은 LangGraph 기반 agent runtime에서 model node와 tools node를 반복합니다.</p>
+    <pre class="code-block compact">from langchain.agents import create_agent
+
+def get_metric(service: str, metric: str) -> str:
+    return f"{service} {metric}: 82%"
+
+agent = create_agent(
+    model="openai:&lt;model-name&gt;",
+    tools=[get_metric],
+    system_prompt="상태 질문은 Tool 결과로 답한다.",
+)
+
+agent.invoke({"messages": [{
+    "role": "user",
+    "content": "checkout CPU 확인",
+}]})</pre>
+    <p class="callout">장점: 코드가 짧고 기본 ReAct loop, Tool 실행, stop condition이 이미 구성되어 있습니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide light" data-screen-label="36 StateGraph 직접 구성" data-od-id="slide-36-react-stategraph">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">ReAct 구현 2: StateGraph 직접 구성</h2>
+    <p class="lead">실행 흐름을 직접 제어하고 싶을 때는 State, Node, Conditional Edge를 명시합니다.</p>
+    <div class="two-col react-code-grid">
+      <pre class="code-block compact">from typing import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class AgentState(TypedDict):
+    messages: list
+
+def call_llm(state):
+    ai = llm.invoke(state["messages"])
+    return {"messages": state["messages"] + [ai]}
+
+def call_tools(state):
+    ai = state["messages"][-1]
+    return {"messages": state["messages"] + run_tools(ai.tool_calls)}
+
+def next_step(state):
+    ai = state["messages"][-1]
+    return "tools" if ai.tool_calls else END</pre>
+      <pre class="code-block compact">graph = StateGraph(AgentState)
+graph.add_node("llm", call_llm)
+graph.add_node("tools", call_tools)
+
+graph.add_edge(START, "llm")
+graph.add_conditional_edges(
+    "llm",
+    next_step,
+    {"tools": "tools", END: END},
+)
+graph.add_edge("tools", "llm")
+
+agent = graph.compile()</pre>
+    </div>
+    <p class="callout">장점: 검증, 승인, 재시도, 로그 수집 같은 운영 제어 지점을 graph에 직접 끼워 넣을 수 있습니다.</p>
+  </section>
+
+  <section class="slide light" data-screen-label="37 RAG 활용" data-od-id="slide-37-rag">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">RAG 활용 방안</h2>
     <p class="lead">RAG는 LLM이 모든 지식을 내부에 기억하도록 만드는 방식이 아닙니다. 필요한 시점에 외부 지식과 근거 문서를 검색해 답변에 반영하는 구조입니다.</p>
@@ -1323,7 +1415,7 @@
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="36 MCP 개념" data-od-id="slide-36-mcp">
+  <section class="slide dark" data-screen-label="38 MCP 개념" data-od-id="slide-38-mcp">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">MCP 개념</h2>
     <p class="lead">MCP = Model Context Protocol. 핵심은 Tool을 애플리케이션 내부 함수가 아니라 <strong>표준 인터페이스를 가진 외부 능력</strong>으로 분리하는 것입니다.</p>
@@ -1351,7 +1443,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="37 일반 Tool과 MCP" data-od-id="slide-37-tool-vs-mcp">
+  <section class="slide light" data-screen-label="39 일반 Tool과 MCP" data-od-id="slide-39-tool-vs-mcp">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">일반 Tool과 MCP의 차이</h2>
     <table class="data-table">
@@ -1368,22 +1460,74 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide hero light center" data-screen-label="38 A2A 개념" data-od-id="slide-38-a2a">
+  <section class="slide hero light center" data-screen-label="40 A2A 개념" data-od-id="slide-40-a2a">
     <div class="eyebrow">Part 5. Agent 생태계와 연결 기술</div>
     <h2 class="h-hero">A2A 개념</h2>
     <p class="lead">A2A는 서로 다른 Agent가 작업을 위임하고, 메시지를 주고받고, 결과를 돌려주는 협업 구조입니다.</p>
     <div class="split-list three">
-      <div class="item"><strong>Agent Discovery</strong></div>
-      <div class="item"><strong>Task Delegation</strong></div>
-      <div class="item"><strong>Message Exchange</strong></div>
-      <div class="item"><strong>결과 반환</strong></div>
-      <div class="item"><strong>독립 Agent 서비스 간 협업</strong></div>
-      <div class="item"><strong>중앙 Orchestrator와 전문 Agent 분리</strong></div>
+      <div class="item"><strong>Agent Card</strong><span>역할, skill, endpoint, 인증 방식</span></div>
+      <div class="item"><strong>Message</strong><span>Agent에게 보내는 요청과 대화 단위</span></div>
+      <div class="item"><strong>Task</strong><span>장기 실행 작업의 상태 추적 단위</span></div>
+      <div class="item"><strong>Artifact</strong><span>Agent가 생성해 돌려주는 결과물</span></div>
+      <div class="item"><strong>Protocol Binding</strong><span>JSON-RPC, gRPC, HTTP+JSON/REST</span></div>
+      <div class="item"><strong>Remote Agent</strong><span>독립 배포된 전문 Agent 서비스</span></div>
     </div>
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="39 A2A 필요 시점" data-od-id="slide-39-a2a-when">
+  <section class="slide dark" data-screen-label="41 REST API와 A2A 비교" data-od-id="slide-41-rest-api-vs-a2a">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">REST API와 A2A의 차이</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>구분</th><th>REST API</th><th>A2A</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>호출 대상</td><td>정해진 기능 endpoint</td><td>독립된 Agent 서비스</td></tr>
+        <tr><td>요청 의미</td><td>파라미터로 기능 실행</td><td>메시지로 작업 위임</td></tr>
+        <tr><td>응답 방식</td><td>즉시 결과 중심</td><td>Message, Task 상태, Artifact 반환</td></tr>
+        <tr><td>기능 설명</td><td>OpenAPI 문서</td><td>Agent Card</td></tr>
+        <tr><td>핵심 차이</td><td>기능 호출</td><td>Agent에게 작업을 맡기고 결과를 추적</td></tr>
+      </tbody>
+    </table>
+    <p class="callout">A2A는 독립된 Agent 서비스들이 서로 작업을 위임하고, 상태와 결과를 주고받기 위한 <strong>공통 통신 규약</strong>입니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="42 A2A 통신 흐름" data-od-id="slide-42-a2a-flow">
+    <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
+    <h2 class="h-xl">A2A 통신 흐름 예시</h2>
+    <p class="lead">A2A는 독립 Agent 서비스가 HTTP 기반 표준 메시지로 작업을 위임하고 결과를 주고받는 구조입니다.</p>
+    <div class="two-col">
+      <div>
+        <h3 class="h-md">1. 발견</h3>
+        <ul class="compact-list">
+          <li>Host Agent가 DB Agent Card 조회</li>
+          <li>slow query 분석 skill 확인</li>
+          <li>endpoint, 인증 방식 확인</li>
+          <li>지원 protocol binding 선택</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="h-md">2. 작업 위임과 결과</h3>
+        <pre class="code-block compact">message/send
+  "checkout slow query 분석해줘"
+
+response
+  taskId: task-123
+  status: working
+
+artifact
+  원인 후보
+  근거 query
+  조치안</pre>
+      </div>
+    </div>
+    <p class="callout">Agent Card는 <strong>누구에게 맡길지</strong>를 정하고, Message/Task/Artifact는 <strong>어떻게 맡기고 추적하고 결과를 받을지</strong>를 정합니다.</p>
+  </section>
+
+  <!-- --- -->
+  <section class="slide dark" data-screen-label="43 A2A 필요 시점" data-od-id="slide-43-a2a-when">
     <p class="eyebrow">Part 5. Agent 생태계와 연결 기술</p>
     <h2 class="h-xl">A2A는 언제 필요한가</h2>
     <div class="split-list">
@@ -1396,7 +1540,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="40 Harness 설계 대상" data-od-id="slide-40-harness-design-targets">
+  <section class="slide light" data-screen-label="44 Harness 설계 대상" data-od-id="slide-44-harness-design-targets">
     <p class="eyebrow">Closing</p>
     <h2 class="h-xl">Harness Engineering이 설계하는 것</h2>
     <div class="split-list three">
@@ -1410,7 +1554,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide dark" data-screen-label="41 사고 전환" data-od-id="slide-41-harness-mindset-shift">
+  <section class="slide dark" data-screen-label="45 사고 전환" data-od-id="slide-45-harness-mindset-shift">
     <p class="eyebrow">Closing</p>
     <h2 class="h-xl">모델 중심 사고 vs Harness 중심 사고</h2>
     <div class="ba-grid">
@@ -1428,7 +1572,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide light" data-screen-label="42 Harness 중요성" data-od-id="slide-42-harness-importance">
+  <section class="slide light" data-screen-label="46 Harness 중요성" data-od-id="slide-46-harness-importance">
     <p class="eyebrow">Closing</p>
     <h2 class="h-xl">왜 Harness Engineering이 중요해졌는가</h2>
     <div class="split-list">
@@ -1440,7 +1584,7 @@ Client
   </section>
 
   <!-- --- -->
-  <section class="slide hero dark center" data-screen-label="43 Harness Engineering" data-od-id="slide-43-harness-engineering">
+  <section class="slide hero dark center" data-screen-label="47 Harness Engineering" data-od-id="slide-47-harness-engineering">
     <div class="eyebrow">Closing</div>
     <h2 class="h-hero">Harness Engineering</h2>
     <p class="lead">Harness Engineering은 모델 주변 실행 환경을 설계하는 관점입니다.<br>품질은 모델 밖의 데이터 연결, Tool 설계, Prompt/Schema, Logging, Evaluation, 권한 관리, 검증 루프에서 결정됩니다.</p>
@@ -1459,7 +1603,7 @@ Client
     <button class="deck-nav-btn" id="deck-prev" type="button" aria-label="이전 슬라이드">‹</button>
     <button class="deck-nav-btn" id="deck-next" type="button" aria-label="다음 슬라이드">›</button>
   </div>
-  <div class="deck-counter"  id="deck-counter" aria-live="polite">1 / 43</div>
+  <div class="deck-counter"  id="deck-counter" aria-live="polite">1 / 47</div>
   <div class="deck-hint">← / → · scroll · swipe</div>
 
   <script>
