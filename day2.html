@@ -1,0 +1,1276 @@
+<!doctype html>
+<!--
+  OD simple-deck seed.
+
+  Single-file horizontal-swipe HTML deck. Each `<section class="slide">`
+  is one slide; the body uses CSS scroll-snap to lock to slide boundaries.
+  Keyboard nav (← / → / Space / Home / End) is wired in via the script at
+  the bottom — DO NOT replace it, it solves five iframe-specific problems
+  that the naive version silently breaks (see comments in the script).
+-->
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>2일차: DaOps로 보는 LangGraph Agent 설계</title>
+  <style>
+    @font-face {
+      font-family: 'Pretendard';
+      src: url('./assets/fonts/PretendardVariable.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #ffffff;
+      --surface: #ffffff;
+      --surface-warm: #f5f5f5;
+      --fg: #1e2026;
+      --fg-2: #32313a;
+      --muted: #848e9c;
+      --meta: #777e90;
+      --border: #e6e8ea;
+      --border-soft: #f0f1f2;
+      --accent: #f0b90b;
+      --accent-on: #1e2026;
+      --accent-hover: #1eaedb;
+      --accent-active: #d0980b;
+      --success: #0ecb81;
+      --warn: #eab308;
+      --danger: #f6465d;
+      --font-display: BinancePlex, 'Pretendard', Arial, sans-serif;
+      --font-body: BinancePlex, 'Pretendard', Arial, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+      --text-xs: 11px;
+      --text-sm: 14px;
+      --text-base: 16px;
+      --text-lg: 20px;
+      --text-xl: 24px;
+      --text-2xl: 28px;
+      --text-3xl: 34px;
+      --text-4xl: 60px;
+      --leading-body: 1.5;
+      --leading-tight: 1.0;
+      --tracking-display: 0;
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-5: 20px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --section-y-desktop: 80px;
+      --section-y-tablet: 48px;
+      --section-y-phone: 32px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 24px;
+      --radius-pill: 9999px;
+      --elev-flat: none;
+      --elev-ring: 0 0 0 1px var(--border);
+      --elev-raised: 0 3px 5px 0 rgba(32, 32, 37, 0.05);
+      --focus-ring: 0 0 0 2px #1eaedb;
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+      --container-max: 1200px;
+      --container-gutter-desktop: 32px;
+      --container-gutter-tablet: 16px;
+      --container-gutter-phone: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+      background: var(--fg);
+      color: var(--bg);
+      font-family: var(--font-body);
+      font-size: 18px;
+      line-height: 1.5;
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+      line-break: strict;
+      display: flex;
+      overflow-x: auto;
+      overflow-y: hidden;
+      scroll-snap-type: x mandatory;
+      scroll-behavior: smooth;
+    }
+    body::-webkit-scrollbar { display: none; }
+    p { text-wrap: pretty; }
+    h1, h2, h3 {
+      text-wrap: balance;
+      word-break: keep-all;
+      overflow-wrap: break-word;
+    }
+
+    .slide {
+      flex: 0 0 100vw;
+      width: 100vw;
+      height: 100vh;
+      scroll-snap-align: start;
+      padding: clamp(44px, 6vw, 88px) clamp(48px, 7vw, 104px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .slide.light,
+    .slide.dark {
+      background: var(--fg);
+      color: var(--bg);
+    }
+    .slide.light .muted,
+    .slide.dark .muted {
+      color: color-mix(in oklch, var(--bg) 68%, transparent);
+    }
+    .slide.light .border,
+    .slide.dark .border {
+      border-color: color-mix(in oklch, var(--bg) 18%, transparent);
+    }
+    .slide.hero { padding-block: clamp(64px, 9vw, 128px); }
+    .slide.center { align-items: center; text-align: center; justify-content: center; }
+    .slide.center .body { margin-inline: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin: 0 0 22px;
+    }
+    .h-hero {
+      font-family: var(--font-display);
+      font-size: clamp(44px, 4.5vw, var(--text-4xl));
+      line-height: 1.08;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      margin: 0 0 20px;
+      max-width: min(92vw, 980px);
+    }
+    .h-xl {
+      font-family: var(--font-display);
+      font-size: clamp(30px, 3.1vw, var(--text-3xl));
+      line-height: 1.08;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      margin: 0 0 20px;
+      max-width: min(90vw, 920px);
+    }
+    .h-md {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.5vw, var(--text-2xl));
+      line-height: 1.12;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      margin: 0 0 16px;
+    }
+    .lead {
+      font-size: clamp(20px, 1.6vw, 24px);
+      line-height: 1.55;
+      color: color-mix(in oklch, var(--bg) 72%, transparent);
+      max-width: 56ch;
+      margin: 0;
+    }
+    .slide.dark .lead { color: color-mix(in oklch, var(--bg) 72%, transparent); }
+    .meta { font-family: var(--font-mono); font-size: 13px; color: color-mix(in oklch, var(--bg) 64%, transparent); }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: clamp(120px, 18vw, 232px);
+      line-height: 0.9;
+      letter-spacing: 0;
+      color: var(--accent);
+      font-weight: 700;
+      margin: 0 0 16px;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-num .unit { font-size: 0.36em; opacity: 0.85; margin-left: 4px; }
+    .stat-caption {
+      font-size: clamp(20px, 1.7vw, 26px);
+      color: color-mix(in oklch, var(--bg) 72%, transparent);
+      max-width: 32ch;
+      margin: 0;
+    }
+    .slide.dark .stat-caption { color: color-mix(in oklch, var(--bg) 72%, transparent); }
+
+    .quote-mark {
+      font-family: var(--font-display);
+      font-size: clamp(120px, 14vw, 184px);
+      line-height: 0.6;
+      color: var(--accent);
+      opacity: 0.18;
+      margin: 0 0 -24px;
+    }
+    .quote-text {
+      font-family: var(--font-display);
+      font-size: clamp(28px, 3vw, var(--text-3xl));
+      line-height: 1.25;
+      letter-spacing: var(--tracking-display);
+      font-weight: 700;
+      max-width: min(88vw, 980px);
+      margin: 0 0 28px;
+    }
+    .quote-author { font-size: 14px; color: color-mix(in oklch, var(--bg) 64%, transparent); }
+
+    .pt-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 26px;
+      margin-top: 36px;
+    }
+    .pt-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .pt {
+      border-top: 1px solid color-mix(in oklch, var(--bg) 18%, transparent);
+      padding-top: 16px;
+    }
+    .pt.is-key { border-top: 2px solid var(--accent); }
+    .pt h3 { font-size: 20px; font-weight: 650; margin: 0 0 8px; letter-spacing: var(--tracking-display); }
+    .pt p  { color: color-mix(in oklch, var(--bg) 70%, transparent); margin: 0; font-size: 17px; line-height: 1.5; }
+    .slide.dark .pt p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 22px;
+      margin-top: 34px;
+    }
+    .pipeline.five {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
+    }
+    .step .nb { font-family: var(--font-mono); font-size: 13px; color: color-mix(in oklch, var(--bg) 58%, transparent); letter-spacing: 0.06em; }
+    .step:first-child .nb { color: var(--accent); }
+    .step h3 { font-family: var(--font-display); font-size: 22px; font-weight: 650; margin: 6px 0 6px; line-height: 1.2; }
+    .step p  { color: color-mix(in oklch, var(--bg) 70%, transparent); margin: 0; font-size: 15px; line-height: 1.48; }
+    .pipeline.five .step h3 { font-size: 20px; }
+    .pipeline.five .step p { font-size: 14px; }
+    .slide.dark .step p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
+
+    .ba-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 32px; }
+    .ba-col .ba-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in oklch, var(--bg) 62%, transparent); margin: 0 0 12px; }
+    .ba-col h3 { font-family: var(--font-display); font-size: 30px; line-height: 1.16; margin: 0 0 16px; max-width: 18ch; }
+    .ba-col p  { color: color-mix(in oklch, var(--bg) 70%, transparent); font-size: 17px; line-height: 1.5; margin: 0; }
+    .slide.dark .ba-col p { color: color-mix(in oklch, var(--bg) 70%, transparent); }
+
+    .deck-counter {
+      position: fixed;
+      bottom: 24px; right: 32px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--bg);
+      background: color-mix(in oklch, var(--fg) 90%, var(--bg));
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      letter-spacing: 0.04em;
+      z-index: 10;
+    }
+    .deck-hint {
+      position: fixed;
+      bottom: 24px; left: 32px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: color-mix(in oklch, var(--bg) 62%, transparent);
+      letter-spacing: 0.04em;
+      z-index: 10;
+    }
+    .deck-progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      background: var(--accent);
+      width: 0;
+      z-index: 10;
+      transition: width 0.18s ease;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 42px;
+      align-items: start;
+      margin-top: 26px;
+    }
+    .split-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px 20px;
+      margin-top: 30px;
+    }
+    .split-list.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .item {
+      border: 1px solid color-mix(in oklch, var(--bg) 14%, transparent);
+      background: color-mix(in oklch, var(--fg) 92%, var(--bg));
+      color: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      min-height: 92px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      box-shadow: var(--elev-raised);
+    }
+    .slide.dark .item {
+      background: color-mix(in oklch, var(--fg) 92%, var(--bg));
+      border-color: color-mix(in oklch, var(--bg) 14%, transparent);
+    }
+    .item strong {
+      display: block;
+      font-size: 19px;
+      line-height: 1.25;
+      margin-bottom: 4px;
+    }
+    .item span, .item p {
+      color: color-mix(in oklch, var(--bg) 68%, transparent);
+      font-size: 16px;
+      line-height: 1.45;
+      margin: 0;
+    }
+    .slide.dark .item span, .slide.dark .item p { color: color-mix(in oklch, var(--bg) 68%, transparent); }
+    .compact-list {
+      margin: 24px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 10px;
+    }
+    .compact-list li {
+      padding-left: 18px;
+      position: relative;
+      font-size: 18px;
+      line-height: 1.42;
+    }
+    .compact-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.75em;
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 999px;
+    }
+    .muted-text { color: color-mix(in oklch, var(--bg) 68%, transparent); }
+    .slide.dark .muted-text { color: color-mix(in oklch, var(--bg) 68%, transparent); }
+    .callout {
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      background: color-mix(in oklch, var(--fg) 91%, var(--bg));
+      color: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 18px 22px;
+      margin-top: 28px;
+      font-size: 20px;
+      line-height: 1.46;
+    }
+    .slide.dark .callout {
+      background: color-mix(in oklch, var(--fg) 91%, var(--bg));
+      border-color: color-mix(in oklch, var(--bg) 16%, transparent);
+    }
+    .example-card {
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      background: color-mix(in oklch, var(--fg) 92%, var(--bg));
+      color: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 26px 30px;
+      margin-top: 28px;
+      box-shadow: var(--elev-raised);
+    }
+    .example-question {
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.4vw, 32px);
+      line-height: 1.18;
+      font-weight: 700;
+      margin: 0 0 22px;
+    }
+    .example-sections {
+      display: grid;
+      grid-template-columns: 0.85fr 1.25fr 1.4fr;
+      gap: 22px;
+      align-items: start;
+    }
+    .example-section {
+      border-top: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      padding-top: 14px;
+      position: relative;
+    }
+    .example-section.is-key { border-top: 2px solid var(--accent); }
+    .example-section h3 {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: color-mix(in oklch, var(--bg) 62%, transparent);
+      margin: 0 0 10px;
+    }
+    .example-section ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 8px;
+    }
+    .example-section li,
+    .example-answer {
+      color: color-mix(in oklch, var(--bg) 72%, transparent);
+      font-size: 16px;
+      line-height: 1.48;
+      margin: 0;
+    }
+    .example-answer strong { color: var(--bg); font-weight: 700; }
+    .dual-example-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 28px;
+    }
+    .mini-example {
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      background: color-mix(in oklch, var(--fg) 92%, var(--bg));
+      color: var(--bg);
+      border-radius: var(--radius-md);
+      padding: 22px 24px;
+      box-shadow: var(--elev-raised);
+    }
+    .mini-example.is-key { border-top: 2px solid var(--accent); }
+    .mini-example h3 {
+      font-family: var(--font-display);
+      font-size: 24px;
+      line-height: 1.16;
+      font-weight: 700;
+      margin: 0 0 14px;
+    }
+    .mini-example .prompt {
+      color: var(--accent);
+      font-size: 17px;
+      line-height: 1.42;
+      margin: 0 0 16px;
+      font-weight: 650;
+    }
+    .mini-example h4 {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: color-mix(in oklch, var(--bg) 62%, transparent);
+      margin: 14px 0 8px;
+    }
+    .mini-example ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .mini-example li,
+    .mini-example p {
+      color: color-mix(in oklch, var(--bg) 72%, transparent);
+      font-size: 15px;
+      line-height: 1.42;
+      margin: 0;
+    }
+    .mini-example strong { color: var(--bg); font-weight: 700; }
+    .code-block {
+      font-family: var(--font-mono);
+      font-size: clamp(14px, 1.35vw, 18px);
+      line-height: 1.55;
+      background: color-mix(in oklch, var(--fg) 88%, var(--bg));
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 22px 24px;
+      margin: 24px 0 0;
+      overflow: hidden;
+      white-space: pre;
+      color: var(--bg);
+    }
+    .code-block.compact {
+      font-size: 12px;
+      line-height: 1.36;
+      padding: 16px 18px;
+      margin-top: 18px;
+    }
+    .react-code-grid {
+      gap: 22px;
+      margin-top: 18px;
+    }
+    .react-code-grid .code-block { margin-top: 0; }
+    .slide.dark .code-block {
+      background: color-mix(in oklch, var(--fg) 88%, var(--bg));
+      color: var(--bg);
+      border-color: color-mix(in oklch, var(--bg) 16%, transparent);
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 28px;
+      font-size: 16px;
+      table-layout: fixed;
+    }
+    .data-table th, .data-table td {
+      border: 1px solid color-mix(in oklch, var(--bg) 16%, transparent);
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .data-table th {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: color-mix(in oklch, var(--bg) 62%, transparent);
+      font-weight: 650;
+    }
+    .slide.dark .data-table th, .slide.dark .data-table td {
+      border-color: color-mix(in oklch, var(--bg) 16%, transparent);
+    }
+    .speaker-notes { display: none; }
+
+    .deck-controls {
+      position: fixed;
+      right: 32px;
+      bottom: 66px;
+      display: flex;
+      gap: 8px;
+      z-index: 10;
+    }
+    .deck-nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 999px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--accent-on);
+      font-family: var(--font-body);
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      box-shadow: var(--elev-raised);
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+    }
+    .deck-nav-btn:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+      color: var(--surface);
+    }
+    .deck-nav-btn:active { transform: translateY(1px); }
+    .deck-nav-btn:not(:disabled):active {
+      background: var(--accent-active);
+      border-color: var(--accent-active);
+      color: var(--accent-on);
+    }
+    .deck-nav-btn:focus-visible {
+      outline: 3px solid var(--accent-hover);
+      outline-offset: 3px;
+    }
+    .deck-nav-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+      box-shadow: none;
+      transform: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body { scroll-behavior: auto; }
+      .deck-progress, .deck-nav-btn { transition: none; }
+    }
+
+    @media (max-width: 900px), (max-height: 720px) {
+      body { font-size: 16px; }
+      .slide {
+        padding: 34px 28px 92px;
+        justify-content: flex-start;
+        overflow-y: auto;
+      }
+      .slide.hero { padding-block: 52px 92px; }
+      .two-col,
+      .ba-grid,
+      .pt-grid,
+      .pt-grid.two,
+      .pipeline,
+      .pipeline.five,
+      .split-list,
+      .example-sections,
+      .dual-example-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .split-list.three {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .item { min-height: auto; padding: 13px 15px; }
+      .split-list.three .item { padding: 10px 11px; }
+      .split-list.three .item strong { font-size: 15px; line-height: 1.22; }
+      .split-list.three .item span { font-size: 13px; line-height: 1.34; }
+      .example-card { padding: 18px 20px; }
+      .mini-example { padding: 18px 20px; }
+      .deck-hint { display: none; }
+      .deck-controls { right: 24px; bottom: 22px; }
+      .deck-counter { right: 128px; bottom: 28px; }
+    }
+
+    @media print {
+      @page { size: 16in 9in; margin: 0; }
+      html, body {
+        width: 100%;
+        height: auto;
+        display: block;
+        overflow: visible;
+        background: var(--fg);
+      }
+      .slide {
+        width: 100vw;
+        height: 100vh;
+        break-after: page;
+        page-break-after: always;
+      }
+      .deck-counter, .deck-hint, .deck-progress, .deck-controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="slide hero dark center" data-screen-label="Day 2" data-od-id="day2-cover">
+    <p class="eyebrow">Day 2</p>
+    <h1 class="h-hero">DaOps로 보는<br />LangGraph Agent 설계</h1>
+    <p class="lead">운영 업무를 Multi-Agent Workflow로 바꾸는 방법</p>
+  </section>
+
+  <section class="slide light" data-screen-label="오늘의 질문" data-od-id="day2-question">
+    <p class="eyebrow">오늘의 질문</p>
+    <h2>“DB가 느립니다”를 Agent는 어떻게 처리해야 할까요?</h2>
+    <div class="pt-grid two">
+      <div class="card accent">
+        <h3>사용자 요청</h3>
+        <p>DB가 느립니다. 원인을 분석해 주세요.</p>
+      </div>
+      <div class="card">
+        <h3>Agent가 해야 할 일</h3>
+        <p>질문을 분류하고, 필요한 지표를 조회하고, 여러 분석 결과를 합쳐 근거 중심 진단을 만들어야 합니다.</p>
+      </div>
+    </div>
+    <div class="callout">2일차는 Agent를 “답변 생성기”가 아니라 운영 분석 workflow로 보는 시간입니다.</div>
+  </section>
+
+  <section class="slide light" data-screen-label="운영 분석의 복잡성" data-od-id="day2-ops-complexity">
+    <p class="eyebrow">DaOps 문제 정의</p>
+    <h2>질문이 단순해도 확인해야 할 원인은 여러 도메인에 걸쳐 있다.</h2>
+    <div class="split-list three">
+      <div class="item"><strong>DB 내부</strong><span>Wait Event, DB Time, Lock, SQL 실행 시간</span></div>
+      <div class="item"><strong>Host 상태</strong><span>CPU Util, Load Average, Run Queue, Memory Pressure</span></div>
+      <div class="item"><strong>용량과 리소스</strong><span>TEMP, UNDO, PGA, Session, Tablespace</span></div>
+      <div class="item"><strong>시간 범위</strong><span>지금인지, 최근 10분인지, 배포 이후인지</span></div>
+      <div class="item"><strong>조치 위험</strong><span>Kill Session, Resource 증설, SQL 튜닝의 영향</span></div>
+      <div class="item"><strong>불확실성</strong><span>확정 원인인지, 후보인지, 추가 확인이 필요한지</span></div>
+    </div>
+  </section>
+
+  <section class="slide dark" data-screen-label="Multi-Agent 필요성" data-od-id="day2-multi-agent">
+    <p class="eyebrow">Multi-Agent 관점</p>
+    <h2>중요한 것은 Agent 개수가 아니라 책임 분리와 호출 기준입니다.</h2>
+    <div class="pipeline five">
+      <div class="step"><h3>1. 분류</h3><p>요청 유형과 필요한 분석 범위를 정합니다.</p></div>
+      <div class="step"><h3>2. 선분석</h3><p>전체 상태를 보고 이상 후보를 좁힙니다.</p></div>
+      <div class="step"><h3>3. 전문 분석</h3><p>필요한 Domain Agent만 실행합니다.</p></div>
+      <div class="step"><h3>4. 병합</h3><p>분석 결과가 모두 도착했는지 확인합니다.</p></div>
+      <div class="step"><h3>5. 검증</h3><p>근거, 누락, 위험 조치를 점검합니다.</p></div>
+    </div>
+    <div class="callout">설계 질문: “어떤 Agent를 만들까?”보다 “언제 어떤 Agent를 호출하고 결과를 어떻게 합칠까?”가 더 중요합니다.</div>
+  </section>
+
+  <section class="slide light" data-screen-label="Agent 분리 기준" data-od-id="day2-agent-boundaries">
+    <p class="eyebrow">Multi-Agent 관점</p>
+    <h2>Agent 분리 기준</h2>
+    <div class="split-list three">
+      <div class="item"><strong>도메인 책임</strong><span>CPU, SQL, Lock, TEMP처럼 해석 기준과 조회 지표가 다른가?</span></div>
+      <div class="item"><strong>Tool 경계</strong><span>사용하는 조회 함수, 권한, 데이터 소스가 다른가?</span></div>
+      <div class="item"><strong>판단 기준</strong><span>원인 판단 규칙이나 위험도 기준이 다른가?</span></div>
+      <div class="item"><strong>실행 비용</strong><span>항상 실행하면 비싸서 필요할 때만 호출해야 하는가?</span></div>
+      <div class="item"><strong>출력 Schema</strong><span>Summary가 합칠 수 있는 독립적인 reason_data를 만들 수 있는가?</span></div>
+      <div class="item"><strong>운영 책임</strong><span>장애 대응이나 조치 승인 주체가 다른가?</span></div>
+    </div>
+    <div class="callout">Agent는 기능 단위로 많이 쪼개는 것이 아니라, 책임·Tool·판단 기준·출력 형태가 달라지는 지점에서 분리합니다.</div>
+  </section>
+
+  <section class="slide light" data-screen-label="DaOps Workflow" data-od-id="day2-workflow">
+    <p class="eyebrow">DaOps 전체 흐름</p>
+    <h2>분류 → 전체 상태 확인 → 세부 분석 → 결과 병합 → 진단 요약 → 품질 검증</h2>
+    <pre class="code-block compact"><code>START
+  ↓
+사용자 질문 / 요청 파라미터 수집
+  ↓
+Classifier
+  ├─ 특정 도메인 질문 → Domain Sub Agent 직접 호출
+  └─ 넓은 성능 저하 질문 → Global Health
+                            ↓
+                    필요한 Domain Sub Agent 선택
+                            ↓
+                    Fan-out: 여러 Agent 병렬 실행
+                            ↓
+                    Join: 결과 병합 / 완료 여부 확인
+                            ↓
+                    Diagnosis Summary
+                            ↓
+                    Quality Gate
+                            ↓
+                    Final Response</code></pre>
+  </section>
+
+  <section class="slide hero dark center" data-screen-label="Part 1" data-od-id="day2-part-1">
+    <p class="eyebrow">Part 1</p>
+    <h1 class="h-hero">LangGraph로<br />Workflow 구조화하기</h1>
+  </section>
+
+  <section class="slide dark" data-screen-label="LangGraph가 필요한 이유" data-od-id="day2-why-langgraph">
+    <p class="eyebrow">LangGraph</p>
+    <h2>조건부 실행, 상태 공유, 병렬 분석이 필요해지면 그래프 구조가 유리합니다.</h2>
+    <div class="split-list three">
+      <div class="item"><strong>상태 공유</strong><span>여러 Node가 user_question, target_nodes, reason_data를 함께 사용합니다.</span></div>
+      <div class="item"><strong>조건부 라우팅</strong><span>request_type과 분석 결과에 따라 다음 Node가 달라집니다.</span></div>
+      <div class="item"><strong>병렬 실행</strong><span>Global Health 이후 필요한 Domain Agent를 fan-out 할 수 있습니다.</span></div>
+      <div class="item"><strong>안전한 병합</strong><span>모든 결과가 도착했는지 확인한 뒤 Summary를 실행합니다.</span></div>
+      <div class="item"><strong>중복 방지</strong><span>visited_nodes와 flag로 같은 Node의 반복 실행을 막습니다.</span></div>
+      <div class="item"><strong>추적 가능성</strong><span>각 Node 실행과 상태 변화를 로그로 남기기 좋습니다.</span></div>
+    </div>
+  </section>
+
+  <section class="slide light" data-screen-label="LangGraph 핵심 구조" data-od-id="day2-langgraph-elements">
+    <p class="eyebrow">LangGraph</p>
+    <h2>LangGraph는 State, Node, Edge, Conditional Edge로 workflow를 표현합니다.</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>구성요소</th><th>역할</th><th>DaOps 예시</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>State</td><td>workflow 전체가 공유하는 실행 문맥</td><td>user_question, target_nodes, reason_data</td></tr>
+        <tr><td>Node</td><td>하나의 처리 단계</td><td>Classifier, Global Health, Temp Agent</td></tr>
+        <tr><td>Edge</td><td>다음 단계로 이동하는 연결</td><td>Classifier → Global Health</td></tr>
+        <tr><td>Conditional Edge</td><td>상태를 보고 다음 경로 선택</td><td>request_type에 따라 Agent 선택</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="slide dark" data-screen-label="최소 코드" data-od-id="day2-minimal-code">
+    <p class="eyebrow">LangGraph</p>
+    <h2>가장 단순한 형태는 Node를 등록하고, Edge와 조건부 Edge를 연결하는 구조입니다.</h2>
+    <pre class="code-block compact"><code>from langgraph.graph import StateGraph, START, END
+
+graph = StateGraph(dict)
+graph.add_node("classifier", classifier_node)
+graph.add_node("global_health", global_health_node)
+graph.add_node("summary", diagnosis_summary_node)
+
+graph.add_edge(START, "classifier")
+graph.add_conditional_edges("classifier", route_after_classifier)
+graph.add_conditional_edges("global_health", route_to_domain_agents)
+graph.add_edge("summary", END)
+
+app = graph.compile()</code></pre>
+  </section>
+
+  <section class="slide light" data-screen-label="DaOps MainState" data-od-id="day2-main-state">
+    <p class="eyebrow">State 설계</p>
+    <h2>MainState는 workflow의 기억 장치이자 제어판입니다.</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>필드</th><th>의미</th><th>제어에 쓰이는 방식</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>user_question</td><td>사용자의 원본 질문</td><td>분류와 최종 답변의 기준</td></tr>
+        <tr><td>request_type</td><td>질문 분류 결과</td><td>Global Health 여부 결정</td></tr>
+        <tr><td>target_nodes</td><td>실행해야 할 Agent 목록</td><td>Join 완료 조건</td></tr>
+        <tr><td>visited_nodes</td><td>이미 완료된 Agent 목록</td><td>중복 실행 방지</td></tr>
+        <tr><td>reason_data</td><td>각 Agent가 만든 근거 데이터</td><td>Summary 입력</td></tr>
+        <tr><td>diagnosis_summary_started</td><td>요약 실행 여부</td><td>Summary 중복 실행 방지</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="slide dark" data-screen-label="State 코드" data-od-id="day2-state-code">
+    <p class="eyebrow">State 설계</p>
+    <pre class="code-block compact"><code>class MainState(TypedDict):
+    user_question: str
+    request_type: str
+    target_nodes: list[str]
+    global_health_target_nodes: list[str]
+    visited_nodes: list[str]
+    reason_data: list[dict]
+    diagnosis_summary: dict | None
+    diagnosis_summary_started: bool
+    reason_join_ready: bool
+    quality_gate_result: dict | None
+    final_answer: str | None</code></pre>
+    <div class="callout">Multi-Agent workflow에서는 “무엇을 실행했는지”, “무엇이 끝났는지”, “무엇을 합쳐야 하는지”를 State로 관리해야 합니다.</div>
+  </section>
+
+  <section class="slide hero dark center" data-screen-label="Part 2" data-od-id="day2-part-2">
+    <p class="eyebrow">Part 2</p>
+    <h1 class="h-hero">DaOps Node<br />설계하기</h1>
+  </section>
+
+  <section class="slide light" data-screen-label="Classifier Node" data-od-id="day2-classifier">
+    <p class="eyebrow">Classifier Node</p>
+    <h2>Classifier는 답변하지 않고, 질문의 성격과 다음 실행 경로를 정합니다.</h2>
+    <div class="pt-grid two">
+      <div class="card">
+        <h3>분류 예시</h3>
+        <ul class="compact-list">
+          <li>“TEMP가 부족한가요?” → Temp Agent 직접 호출</li>
+          <li>“DB가 느립니다” → Global Health 먼저 실행</li>
+          <li>“최근 10분 CPU 병목인가요?” → OS/CPU Agent 우선 호출</li>
+        </ul>
+      </div>
+      <div class="card accent">
+        <h3>결정해야 할 것</h3>
+        <ul class="compact-list">
+          <li>request_type은 무엇인가?</li>
+          <li>전체 상태 점검이 필요한가?</li>
+          <li>바로 호출할 Domain Agent가 있는가?</li>
+          <li>분류 결과를 신뢰할 수 있는가?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide dark" data-screen-label="Global Health Agent" data-od-id="day2-global-health">
+    <p class="eyebrow">Global Health Agent</p>
+    <h2>Global Health는 분석 범위를 좁히는 Agent입니다.</h2>
+    <div class="two-col">
+      <div>
+        <h3>확인 항목</h3>
+        <ul class="compact-list">
+          <li>Host CPU Util %, Load Average</li>
+          <li>DB Wait Time Ratio, DB CPU Time Ratio</li>
+          <li>DB Time/sec, AAS</li>
+          <li>Top Event, 주요 Metric 변화</li>
+        </ul>
+      </div>
+      <div>
+        <h3>결과 예시</h3>
+        <pre class="code-block compact"><code>Global Health 결과
+  - Host CPU Util: 92%
+  - DB CPU Time Ratio: 높음
+  - Top Wait Event: CPU + db file sequential read
+
+선택할 Sub Agent
+  - OS/CPU Agent
+  - SQL Agent</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-screen-label="Domain Sub Agent" data-od-id="day2-domain-agents">
+    <p class="eyebrow">Domain Sub Agent</p>
+    <h2>좋은 Domain Agent는 책임 경계가 명확합니다.</h2>
+    <div class="callout">책임 경계가 명확해야 Tool 호출, 근거 생성, 판단 범위를 통제할 수 있습니다. 경계가 흐리면 중복 조회, 역할 충돌, Summary 단계의 판단 불일치가 발생합니다.</div>
+    <div class="split-list three">
+      <div class="item"><strong>Temp Agent</strong><span>TEMP 사용량, spill, time_to_full 분석</span></div>
+      <div class="item"><strong>Undo Agent</strong><span>long transaction, undo retention, rollback 이슈 분석</span></div>
+      <div class="item"><strong>Lock Agent</strong><span>blocking session, wait chain, TX/TM lock 분석</span></div>
+      <div class="item"><strong>OS/CPU Agent</strong><span>Host CPU, DB CPU, run queue, load average 분석</span></div>
+      <div class="item"><strong>SQL Agent</strong><span>Top SQL, 실행 계획, elapsed time 변화 분석</span></div>
+      <div class="item"><strong>Memory/PGA Agent</strong><span>PGA 사용량, memory pressure, process별 사용량 분석</span></div>
+    </div>
+  </section>
+
+  <section class="slide hero dark center" data-screen-label="Part 3" data-od-id="day2-part-3">
+    <p class="eyebrow">Part 3</p>
+    <h1 class="h-hero">Sub Agent를<br />ReAct로 전환하기</h1>
+  </section>
+
+  <section class="slide dark" data-screen-label="기존 Sub Agent 구조" data-od-id="day2-fixed-sub-agent">
+    <p class="eyebrow">Sub Agent 전환</p>
+    <h2>기존 구조는 정해진 조회 함수를 모두 호출한 뒤 LLM에게 분석을 맡기는 방식입니다.</h2>
+    <div class="two-col">
+      <div>
+        <h3>고정 조회 흐름</h3>
+        <pre class="code-block compact"><code>DB가 느립니다
+  ↓
+CPU 조회
+Wait Event 조회
+Lock 조회
+Top SQL 조회
+TEMP 조회
+UNDO 조회
+  ↓
+모든 결과를 LLM에 넣고 분석</code></pre>
+      </div>
+      <div>
+        <h3>생기는 한계</h3>
+        <ul class="compact-list">
+          <li>질문과 무관한 데이터까지 항상 조회합니다.</li>
+          <li>Tool 호출 시간과 비용이 고정적으로 커집니다.</li>
+          <li>LLM 입력에 불필요한 문맥이 섞입니다.</li>
+          <li>중간 결과를 보고 추가 조회하기 어렵습니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-screen-label="ReAct Sub Agent" data-od-id="day2-react-sub-agent">
+    <p class="eyebrow">Sub Agent 전환</p>
+    <h2>ReAct 구조는 관찰 결과를 보면서 다음에 필요한 Tool을 선택합니다.</h2>
+    <div class="pipeline five">
+      <div class="step"><h3>1. 질문</h3><p>요청과 시간 범위, 대상 DB를 확인합니다.</p></div>
+      <div class="step"><h3>2. 가설</h3><p>현재 가능한 원인 후보를 세웁니다.</p></div>
+      <div class="step"><h3>3. Tool 선택</h3><p>필요한 조회 함수만 호출합니다.</p></div>
+      <div class="step"><h3>4. 관찰</h3><p>조회 결과로 다음 행동을 결정합니다.</p></div>
+      <div class="step"><h3>5. 분석</h3><p>충분한 근거가 모이면 결과를 반환합니다.</p></div>
+    </div>
+    <div class="callout">LangGraph는 전체 workflow를 제어하고, ReAct는 각 Domain Sub Agent 내부에서 Tool 호출 순서를 결정하게 해줍니다.</div>
+  </section>
+
+  <section class="slide dark" data-screen-label="고정 조회 vs ReAct" data-od-id="day2-fixed-vs-react">
+    <p class="eyebrow">Sub Agent 전환</p>
+    <h2>고정 조회 방식과 ReAct 방식은 데이터 수집 전략이 다릅니다.</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>항목</th><th>고정 조회 방식</th><th>ReAct 방식</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>조회 방식</td><td>정해진 함수를 모두 호출</td><td>필요한 Tool을 선택적으로 호출</td></tr>
+        <tr><td>문맥 구성</td><td>불필요한 데이터가 섞일 수 있음</td><td>관찰 결과 중심으로 누적</td></tr>
+        <tr><td>비용/시간</td><td>질문과 무관하게 비슷하게 큼</td><td>질문에 따라 줄어들 수 있음</td></tr>
+        <tr><td>분석 흐름</td><td>조회 후 한 번에 분석</td><td>조회와 판단을 반복</td></tr>
+        <tr><td>주의점</td><td>과조회, 문맥 오염</td><td>반복 제한, Tool 설계, 검증 필요</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="slide light" data-screen-label="DaOps ReAct 적용" data-od-id="day2-react-daops-example">
+    <p class="eyebrow">Sub Agent 전환</p>
+    <h2>예를 들어 SQL Agent는 필요한 근거를 단계적으로 수집하는 ReAct Agent가 될 수 있습니다.</h2>
+    <div class="two-col">
+      <div>
+        <h3>SQL ReAct Agent 예시</h3>
+        <pre class="code-block compact"><code>1. 최근 10분 Top Wait Event 조회
+2. CPU성 대기와 I/O 대기가 함께 높음을 관찰
+3. Top SQL 조회
+4. 특정 SQL의 elapsed time 증가 확인
+5. 실행 계획 변화 여부 조회
+6. SQL 병목 후보와 근거 반환</code></pre>
+      </div>
+      <div>
+        <h3>전환 기준</h3>
+        <ul class="compact-list">
+          <li>Tool은 작고 명확한 책임을 가져야 합니다.</li>
+          <li>Tool 이름과 설명은 LLM이 선택하기 쉬워야 합니다.</li>
+          <li>시간 범위, 대상 DB, 단위는 명시적으로 전달해야 합니다.</li>
+          <li>최대 반복 횟수와 종료 조건을 둬야 합니다.</li>
+          <li>최종 출력은 기존 reason_data schema에 맞춰야 합니다.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide light" data-screen-label="Tool과 Schema" data-od-id="day2-tool-schema">
+    <p class="eyebrow">ReAct 설계</p>
+    <h2>Tool 설명과 결과값 예시</h2>
+    <div class="two-col">
+      <div>
+        <h3>Tool 설명</h3>
+        <p>LLM이 “어떤 Tool을 언제 호출할지” 고르는 기준입니다. Tool 이름, 호출 상황, 입력값, 반환 요약이 명확해야 합니다.</p>
+        <pre class="code-block compact"><code>@tool
+def get_top_wait_events(db_id, start_time, end_time):
+    """
+    DB 지연 원인이 CPU, I/O, Lock, Commit,
+    Network 중 어디에 가까운지 분류할 때 사용한다.
+
+    Returns:
+      event_name: 대기 이벤트명
+      wait_class: User I/O, CPU, Concurrency 등
+      db_time_ratio: 전체 DB Time 중 비율, 0~1
+      avg_wait_ms: 평균 대기 시간, milliseconds
+    """</code></pre>
+      </div>
+      <div>
+        <h3>Tool 결과 Schema</h3>
+        <p>Tool이 반환한 조회 데이터의 의미를 설명하는 schema입니다. 숫자는 의미, 단위, 범위를 함께 전달해야 합니다.</p>
+        <pre class="code-block compact"><code>{
+  "event_name": "db file sequential read",
+  "wait_class": "User I/O",
+  "db_time_ratio": 0.42,
+  "avg_wait_ms": 18.5,
+  "unit": {
+    "db_time_ratio": "0~1 ratio",
+    "avg_wait_ms": "milliseconds"
+  }
+}</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide dark" data-screen-label="Prompt Runbook Output" data-od-id="day2-prompt-runbook-output">
+    <p class="eyebrow">ReAct 설계</p>
+    <h2>Prompt와 Runbook/RAG 예시</h2>
+    <div class="split-list">
+      <div class="item" style="grid-column: 1 / -1;">
+        <strong>Runbook 검색 예시</strong>
+        <span>질문: TEMP가 계속 증가하는데 위험한가요?</span>
+        <ol style="margin: 14px 0 0; padding-left: 22px; font-size: 17px; line-height: 1.45; color: color-mix(in oklch, var(--bg) 72%, transparent);">
+          <li>TEMP 사용량 조회</li>
+          <li>time_to_full이 25분으로 계산됨</li>
+          <li>search_runbook("TEMP time_to_full 위험 기준") 호출</li>
+          <li>Runbook에서 “30분 미만이면 즉시 확인 필요” 기준 확인</li>
+          <li>TEMP 부족 위험도를 high로 판단</li>
+          <li>근거와 조치 전 확인 절차를 포함해 답변</li>
+        </ol>
+      </div>
+      <div class="item">
+        <strong>Agent Prompt 예시</strong>
+        <span>Top SQL만으로 원인을 확정하지 말고 Wait Event, CPU, I/O 지표와 함께 판단합니다. DB Time 30% 이상이면 주요 후보로 보고, 데이터가 부족하면 “가능성”으로 표현합니다.</span>
+      </div>
+      <div class="item">
+        <strong>Runbook / RAG 예시</strong>
+        <span>CPU 병목 판단 기준, Lock wait 대응 절차, TEMP 부족 시 time_to_full 기준, 위험 조치 전 확인 절차처럼 길고 자주 바뀌는 운영 지식을 둡니다.</span>
+      </div>
+    </div>
+    <div class="callout">Runbook/RAG는 Agent에게 벡터 검색 가능한 Tool로 제공하고, Agent는 지표 조회 결과에 맞는 운영 기준을 필요할 때 검색합니다.</div>
+  </section>
+
+  <section class="slide hero dark center" data-screen-label="Part 4" data-od-id="day2-part-4">
+    <p class="eyebrow">Part 4</p>
+    <h1 class="h-hero">결과 병합과<br />최종 검증하기</h1>
+  </section>
+
+  <section class="slide dark" data-screen-label="Fan-out / Fan-in" data-od-id="day2-fanout-fanin">
+    <p class="eyebrow">Fan-out / Fan-in</p>
+    <div class="two-col">
+      <div>
+        <h3>Fan-out</h3>
+        <pre class="code-block compact"><code>Global Health
+  ├─ OS/CPU Agent
+  ├─ Lock Agent
+  └─ SQL Agent</code></pre>
+      </div>
+      <div>
+        <h3>Fan-in</h3>
+        <pre class="code-block compact"><code>OS/CPU Agent \
+Lock Agent    → Join → Diagnosis Summary
+SQL Agent    /</code></pre>
+      </div>
+    </div>
+    <div class="callout">Join은 결과 병합 지점이면서, 누락·중복·조기 실행을 막는 제어 지점입니다.</div>
+  </section>
+
+  <section class="slide dark" data-screen-label="Join 조건 코드" data-od-id="day2-join-code">
+    <pre class="code-block compact"><code>visited_nodes = ["os_cpu", "lock"]
+target_nodes = ["os_cpu", "lock", "sql"]
+
+reason_join_ready = set(visited_nodes) >= set(target_nodes)
+
+if not reason_join_ready:
+    return "wait_for_more_results"
+
+if state["diagnosis_summary_started"]:
+    return END
+
+return "diagnosis_summary"</code></pre>
+  </section>
+
+  <section class="slide light" data-screen-label="Diagnosis Summary" data-od-id="day2-summary-node">
+    <p class="eyebrow">Diagnosis Summary 주의사항</p>
+    <h2>Summary Node에서 특히 주의해야 할 점</h2>
+    <div class="split-list three">
+      <div class="item">
+        <strong>1. 근거와 결론 분리</strong>
+        <span>각 Agent가 제공한 수치, 시계열, Wait Event, SQL 근거를 먼저 정리하고 그 위에 진단 결론을 얹습니다.</span>
+      </div>
+      <div class="item">
+        <strong>2. Agent 간 충돌 처리</strong>
+        <span>SQL Agent와 OS/CPU Agent가 서로 다른 원인을 지지하면 억지로 하나를 고르지 않고, 공통 근거와 충돌 지점을 분리합니다.</span>
+      </div>
+      <div class="item">
+        <strong>3. 없는 근거 생성 금지</strong>
+        <span>조회하지 않은 지표, 존재하지 않는 SQL ID, 확인하지 않은 장애 원인을 Summary 단계에서 새로 만들지 않습니다.</span>
+      </div>
+    </div>
+    <div class="callout">Summary Node의 역할은 “그럴듯한 문장 생성”이 아니라, Sub Agent들이 만든 근거를 잃지 않고 일관된 진단으로 정리하는 것입니다.</div>
+  </section>
+
+  <section class="slide dark" data-screen-label="Quality Gate" data-od-id="day2-quality-gate">
+    <p class="eyebrow">Quality Gate</p>
+    <h2>Quality Gate는 최종 답변의 실패 유형을 처리합니다.</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>검증 항목</th><th>확인 질문</th><th>실패 시 처리</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>질문 적합성</td><td>사용자 질문에 직접 답했는가?</td><td>질문 범위에 맞게 답변을 재작성</td></tr>
+        <tr><td>근거 반영</td><td>Sub Agent 결과가 답변에 반영됐는가?</td><td>누락된 reason_data를 Summary에 다시 반영</td></tr>
+        <tr><td>근거 일관성</td><td>Agent 결과와 최종 답변이 모순되지 않는가?</td><td>충돌 지점을 표시하고 결론을 완화</td></tr>
+        <tr><td>조치 안전성</td><td>위험한 조치를 단정적으로 권하지 않는가?</td><td>조치 전 확인 조건과 승인 절차 추가</td></tr>
+        <tr><td>불확실성 표현</td><td>데이터 부족을 명확히 표현했는가?</td><td>확정 표현을 후보/가능성 표현으로 변경</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="slide light" data-screen-label="Quality Gate 점수화" data-od-id="day2-quality-gate-score">
+    <p class="eyebrow">Quality Gate</p>
+    <h2>Quality Gate는 점수와 필수 통과 조건으로 final_response를 제어할 수 있습니다.</h2>
+    <div class="two-col">
+      <div>
+        <h3>점수화 예시</h3>
+        <table class="data-table">
+          <thead>
+            <tr><th>항목</th><th>점수</th><th>의미</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>질문 적합성</td><td>0~2</td><td>질문에 직접 답했는가</td></tr>
+            <tr><td>근거 반영</td><td>0~2</td><td>reason_data가 반영됐는가</td></tr>
+            <tr><td>근거 일관성</td><td>0~2</td><td>Agent 결과와 모순이 없는가</td></tr>
+            <tr><td>조치 안전성</td><td>0~2</td><td>위험 조치를 단정하지 않았는가</td></tr>
+            <tr><td>불확실성 표현</td><td>0~2</td><td>데이터 부족을 표현했는가</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>통과 조건 예시</h3>
+        <ul class="compact-list">
+          <li>총점 8점 이상일 때만 final_response로 전달</li>
+          <li>조치 안전성은 반드시 2점이어야 통과</li>
+          <li>근거 일관성은 최소 1점 이상이어야 통과</li>
+          <li>실패 시 항목별 처리 정책을 적용하고 재평가</li>
+          <li>최대 재시도 후에도 실패하면 근거 부족 답변 또는 human review</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout">총점만으로 통과시키면 위험 조치가 포함된 답변이 통과할 수 있으므로, 운영 위험 항목에는 필수 통과 조건을 둡니다.</div>
+  </section>
+
+  <!-- chrome -->
+  <div class="deck-progress" id="deck-progress" aria-hidden></div>
+  <div class="deck-controls" aria-label="슬라이드 이동">
+    <button class="deck-nav-btn" id="deck-prev" type="button" aria-label="이전 슬라이드">‹</button>
+    <button class="deck-nav-btn" id="deck-next" type="button" aria-label="다음 슬라이드">›</button>
+  </div>
+  <div class="deck-counter"  id="deck-counter" aria-live="polite">1 / 29</div>
+  <div class="deck-hint">← / → · scroll · swipe</div>
+
+  <script>
+    /*
+      Five hard rules for deck nav inside an iframe (the OD preview is one).
+      The naive `document.body.scrollLeft` pattern silently fails: clicks
+      register, but keyboard does nothing, and the counter freezes at "1 / N"
+      while the user is on slide 6.
+
+      1. Detect the real scroller — body OR documentElement, depending.
+      2. Listen for scroll on BOTH window and document, capture phase.
+      3. Listen for keydown on BOTH window and document, capture phase.
+      4. Auto-focus body so arrow keys work without an upfront click.
+      5. Never use Element.scrollIntoView — it can yank the host page.
+    */
+    (function () {
+      var slides   = document.querySelectorAll('.slide');
+      var counter  = document.getElementById('deck-counter');
+      var progress = document.getElementById('deck-progress');
+      var prevBtn  = document.getElementById('deck-prev');
+      var nextBtn  = document.getElementById('deck-next');
+      var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)');
+      var KEY      = 'od-deck-day2-pos';
+      var active   = 0;
+
+      function scrollContainers() {
+        return [document.scrollingElement, document.documentElement, document.body]
+          .filter(Boolean)
+          .filter(function (el, idx, arr) { return arr.indexOf(el) === idx; });
+      }
+      function overflowX(el) {
+        if (!el) return 0;
+        return Math.max(0, (el.scrollWidth || 0) - (el.clientWidth || 0));
+      }
+      function scrollLeftOf(el) {
+        if (!el) return 0;
+        try { return Number(el.scrollLeft) || 0; } catch (_) { return 0; }
+      }
+      function activeScrollLeft() {
+        var candidates = scrollContainers();
+        var best = 0;
+        for (var i = 0; i < candidates.length; i++) {
+          var left = scrollLeftOf(candidates[i]);
+          if (Math.abs(left) > Math.abs(best)) best = left;
+        }
+        return best;
+      }
+      function scroller() {
+        var candidates = scrollContainers();
+        var best = candidates[0] || document.documentElement;
+        var bestScore = -1;
+        for (var i = 0; i < candidates.length; i++) {
+          var el = candidates[i];
+          var score = overflowX(el) + Math.abs(scrollLeftOf(el)) * 2;
+          if (score > bestScore) {
+            best = el;
+            bestScore = score;
+          }
+        }
+        return best;
+      }
+      function scrollToLeft(left, behavior) {
+        var candidates = scrollContainers();
+        for (var i = 0; i < candidates.length; i++) {
+          try { candidates[i].scrollLeft = left; } catch (_) {}
+          try { candidates[i].scrollTo({ left: left, behavior: behavior || 'smooth' }); } catch (_) {}
+        }
+      }
+      function setActive(i) {
+        active = i;
+        if (counter)  counter.textContent  = (i + 1) + ' / ' + slides.length;
+        if (progress) progress.style.width = (((i + 1) / slides.length) * 100) + '%';
+        if (prevBtn) prevBtn.disabled = i === 0;
+        if (nextBtn) nextBtn.disabled = i === slides.length - 1;
+        try { localStorage.setItem(KEY, String(i)); } catch (_) {}
+      }
+      function go(i) {
+        var next = Math.max(0, Math.min(slides.length - 1, i));
+        setActive(next);
+        scrollToLeft(next * window.innerWidth, reduceMotion && reduceMotion.matches ? 'auto' : 'smooth');
+      }
+      function syncFromScroll() {
+        var i = Math.round(activeScrollLeft() / window.innerWidth);
+        if (i !== active && i >= 0 && i < slides.length) setActive(i);
+      }
+      function onKey(e) {
+        if (e.defaultPrevented) return;
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+        if      (e.key === 'ArrowRight' || e.key === ' '       || e.key === 'PageDown') { e.preventDefault(); go(active + 1); }
+        else if (e.key === 'ArrowLeft'  || e.key === 'PageUp')                            { e.preventDefault(); go(active - 1); }
+        else if (e.key === 'Home')                                                        { e.preventDefault(); go(0); }
+        else if (e.key === 'End')                                                         { e.preventDefault(); go(slides.length - 1); }
+      }
+
+      // listen on both surfaces, capture phase
+      window.addEventListener('keydown', onKey, true);
+      document.addEventListener('keydown', onKey, true);
+      document.addEventListener('scroll', syncFromScroll, { passive: true, capture: true });
+      window.addEventListener('scroll', syncFromScroll,   { passive: true });
+      if (prevBtn) prevBtn.addEventListener('click', function () { go(active - 1); });
+      if (nextBtn) nextBtn.addEventListener('click', function () { go(active + 1); });
+
+      // auto-focus
+      document.body.setAttribute('tabindex', '-1');
+      document.body.style.outline = 'none';
+      function focusDeck() { try { window.focus(); document.body.focus({ preventScroll: true }); } catch (_) {} }
+      document.addEventListener('mousedown', focusDeck);
+      window.addEventListener('load', focusDeck);
+      focusDeck();
+
+      // restore last-seen position
+      try {
+        var saved = parseInt(localStorage.getItem(KEY) || '0', 10);
+        if (!isNaN(saved) && saved >= 0 && saved < slides.length) {
+          setActive(saved);
+          scrollToLeft(saved * window.innerWidth, 'instant');
+        } else {
+          setActive(0);
+        }
+      } catch (_) { setActive(0); }
+    })();
+  </script>
+</body>
+</html>
